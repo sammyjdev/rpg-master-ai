@@ -1,0 +1,4 @@
+rootProject.name = 'rpg-master-ai'
+
+include 'shared-domain'
+include 'app'

@@ -1,0 +1,52 @@
+# Gradle
+.gradle/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+nul
+nul
+
+# Spring Boot
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+application-local.yml
+application-prod.yml
+
+# Logs
+*.log
+logs/
+
+# Makefile / rpgm runtime files
+.app.pid
+
+# Environment
+.env
+.env.local
+
+# PDF source files (too large for git)
+*.pdf
+pdfs/
+
+# Test reports
+test-results/

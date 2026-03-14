@@ -1,0 +1,208 @@
+#!/usr/bin/env bash
+# ─── RPG Master AI — Dev CLI ────────────────────────────────
+# Usage: ./rpgm [start|stop|restart|status|logs|ask]
+set -euo pipefail
+
+APP_PORT=8082
+PID_FILE=".app.pid"
+LOG_FILE=".app.log"
+HEALTH_URL="http://localhost:${APP_PORT}/actuator/health"
+API_URL="http://localhost:${APP_PORT}/v1/chat/completions"
+
+is_running() {
+    [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
+}
+
+wait_for_health() {
+    local max_attempts=30
+    for i in $(seq 1 $max_attempts); do
+        if curl -sf "$HEALTH_URL" > /dev/null 2>&1; then
+            return 0
+        fi
+        sleep 2
+    done
+    return 1
+}
+
+cmd_start() {
+    if is_running; then
+        echo "⚠  App already running (PID $(cat "$PID_FILE"))"
+        return 0
+    fi
+
+    echo "🔨 Building..."
+    ./gradlew build -x integrationTest -x test --quiet
+
+    echo "🚀 Starting RPG Master API on port ${APP_PORT}..."
+    SPRING_PROFILES_ACTIVE=local,api ./gradlew :app:bootRun > "$LOG_FILE" 2>&1 &
+    echo $! > "$PID_FILE"
+
+    echo "⏳ Waiting for app to be ready..."
+    if wait_for_health; then
+        echo "✅ App running — PID $(cat "$PID_FILE") — http://localhost:${APP_PORT}"
+    else
+        echo "❌ App failed to start within 60s. Check: ./rpgm logs"
+        return 1
+    fi
+}
+
+cmd_stop() {
+    if ! [[ -f "$PID_FILE" ]]; then
+        echo "⚠  No PID file — app not managed by rpgm"
+        return 0
+    fi
+
+    local pid
+    pid=$(cat "$PID_FILE")
+
+    if ! kill -0 "$pid" 2>/dev/null; then
+        echo "⚠  PID $pid not running (stale PID file)"
+        rm -f "$PID_FILE"
+        return 0
+    fi
+
+    echo "🛑 Stopping app (PID $pid)..."
+    kill "$pid"
+
+    for i in $(seq 1 10); do
+        if ! kill -0 "$pid" 2>/dev/null; then break; fi
+        sleep 1
+    done
+
+    if kill -0 "$pid" 2>/dev/null; then
+        echo "   Force killing..."
+        kill -9 "$pid" 2>/dev/null || true
+    fi
+
+    rm -f "$PID_FILE"
+    echo "✅ App stopped"
+}
+
+cmd_restart() {
+    cmd_stop
+    cmd_start
+}
+
+cmd_status() {
+    echo "── Docker Infrastructure ──"
+    docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null \
+        || echo "  Docker not available"
+
+    echo ""
+    echo "── RPG Master API ──"
+
+    if is_running; then
+        echo "  PID:    $(cat "$PID_FILE")"
+        echo "  Port:   ${APP_PORT}"
+
+        local health
+        health=$(curl -sf "$HEALTH_URL" 2>/dev/null) && \
+            echo "  Health: ✅ $health" || \
+            echo "  Health: ⏳ starting..."
+    else
+        echo "  Status: 🔴 not running"
+    fi
+}
+
+cmd_logs() {
+    if [[ -f "$LOG_FILE" ]]; then
+        tail -f "$LOG_FILE"
+    else
+        echo "No log file. Start with: ./rpgm start"
+    fi
+}
+
+cmd_ingest() {
+    local pdf_path="${1:-}"
+    local rulebook_id="${2:-}"
+
+    if [[ -z "$pdf_path" || -z "$rulebook_id" ]]; then
+        echo "Usage: ./rpgm ingest <path-to-pdf> <rulebook-id>"
+        echo "Example: ./rpgm ingest pdfs/phb.pdf dnd-5e-phb"
+        return 1
+    fi
+
+    if [[ ! -f "$pdf_path" ]]; then
+        echo "❌ PDF not found: $pdf_path"
+        return 1
+    fi
+
+    local abs_path
+    abs_path="$(cd "$(dirname "$pdf_path")" && pwd)/$(basename "$pdf_path")"
+    # Convert Git Bash /c/Users/... → C:/Users/... for Java on Windows
+    abs_path=$(echo "$abs_path" | sed 's|^/\([a-zA-Z]\)/|\1:/|')
+
+    echo "📚 Ingesting: $abs_path as '$rulebook_id'..."
+    local response
+    response=$(curl -sf http://localhost:8082/v1/ingest \
+        -H "Content-Type: application/json" \
+        -d "{\"path\": \"$abs_path\", \"rulebookId\": \"$rulebook_id\"}" 2>&1)
+
+    if [[ $? -ne 0 ]]; then
+        echo "❌ Ingest request failed. Is the app running? Start with: ./rpgm start"
+        echo "$response"
+        return 1
+    fi
+
+    echo "✅ $response"
+}
+
+cmd_ingest_all() {
+    echo "📚 Re-ingesting all rulebooks..."
+    cmd_ingest pdfs/phb.pdf dnd-5e-phb
+    cmd_ingest pdfs/dmg.pdf dnd-5e-dmg
+    cmd_ingest pdfs/mm.pdf dnd-5e-mm
+    echo "✅ All rulebooks ingested"
+}
+
+cmd_ask() {
+    if [[ -z "$question" ]]; then
+        echo "Usage: ./rpgm ask What is the Fireball spell?"
+        return 1
+    fi
+
+    if ! curl -sf "$HEALTH_URL" > /dev/null 2>&1; then
+        echo "❌ App not running. Try: ./rpgm start"
+        return 1
+    fi
+
+    curl -sf "$API_URL" \
+        -H "Content-Type: application/json" \
+        -d "{\"model\":\"all-rulebooks\",\"messages\":[{\"role\":\"user\",\"content\":\"${question}\"}]}" \
+        | python -m json.tool 2>/dev/null \
+        || echo "❌ Request failed"
+}
+
+cmd_help() {
+    cat <<EOF
+RPG Master AI — Dev CLI
+
+Usage: ./rpgm <command>
+
+Commands:
+  start     Build and start the API server (port ${APP_PORT})
+  stop      Stop the API server
+  restart   Stop + start
+  status    Show infrastructure and app health
+  logs      Tail application logs
+  ingest <pdf> <id>  Ingest a PDF (e.g., ./rpgm ingest pdfs/phb.pdf dnd-5e-phb)
+  ingest-all        Re-ingest all PDFs from pdfs/ folder
+  ask <Q>   Quick query (e.g., ./rpgm ask What is Fireball?)
+  help      Show this help
+
+EOF
+}
+
+# ─── Main ────────────────────────────────────────────────────
+case "${1:-help}" in
+    start)   cmd_start ;;
+    stop)    cmd_stop ;;
+    restart) cmd_restart ;;
+    status)  cmd_status ;;
+    logs)    cmd_logs ;;
+    ask)     shift; cmd_ask "$@" ;;
+    ingest)  shift; cmd_ingest "$@" ;;
+    ingest-all) cmd_ingest_all ;;
+    help)    cmd_help ;;
+    *)       echo "Unknown command: $1"; cmd_help; exit 1 ;;
+esac
