@@ -72,6 +72,8 @@ public class DocumentEntity {
     public IngestionStatus getStatus() { return status; }
     public Instant getUploadedAt() { return uploadedAt; }
     public int getTotalChunks() { return totalChunks; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
 
     public void setStatus(IngestionStatus status) { this.status = status; }
     public void setTotalChunks(int totalChunks) { this.totalChunks = totalChunks; }

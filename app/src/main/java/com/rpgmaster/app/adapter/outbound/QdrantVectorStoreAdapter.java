@@ -33,6 +33,7 @@ public class QdrantVectorStoreAdapter implements VectorStorePort {
 
     private static final Logger log = LoggerFactory.getLogger(QdrantVectorStoreAdapter.class);
     private static final String COLLECTION = "rpg-chunks";
+    private static final String RULEBOOK_ID_FIELD = "rulebook_id";
 
     private final QdrantClient qdrantClient;
 
@@ -54,9 +55,9 @@ public class QdrantVectorStoreAdapter implements VectorStorePort {
             log.info("Upserted {} points to Qdrant, status={}", points.size(), result.getStatus());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted during Qdrant upsert", e);
+            throw new IllegalStateException("Interrupted during Qdrant upsert", e);
         } catch (ExecutionException e) {
-            throw new RuntimeException("Qdrant upsert failed", e.getCause());
+            throw new IllegalStateException("Qdrant upsert failed", e.getCause());
         }
     }
 
@@ -78,7 +79,7 @@ public class QdrantVectorStoreAdapter implements VectorStorePort {
 
             if (rulebookId != null) {
                 var filter = Points.Filter.newBuilder()
-                        .addMust(matchKeyword("rulebook_id", rulebookId))
+                        .addMust(matchKeyword(RULEBOOK_ID_FIELD, rulebookId))
                         .build();
                 searchBuilder.setFilter(filter);
             }
@@ -89,15 +90,15 @@ public class QdrantVectorStoreAdapter implements VectorStorePort {
                             scored.getPayload().get("text").getStringValue(),
                             (int) scored.getPayload().get("page_number").getIntegerValue(),
                             scored.getScore(),
-                            scored.getPayload().get("rulebook_id").getStringValue()
+                            scored.getPayload().get(RULEBOOK_ID_FIELD).getStringValue()
                     ))
                     .toList();
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted during Qdrant search", e);
+            throw new IllegalStateException("Interrupted during Qdrant search", e);
         } catch (ExecutionException e) {
-            throw new RuntimeException("Qdrant search failed", e.getCause());
+            throw new IllegalStateException("Qdrant search failed", e.getCause());
         }
     }
 
@@ -108,7 +109,7 @@ public class QdrantVectorStoreAdapter implements VectorStorePort {
                 .putAllPayload(Map.of(
                         "text",        value(chunk.text()),
                         "document_id", value(chunk.documentId()),
-                        "rulebook_id", value(chunk.rulebookId()),
+                        RULEBOOK_ID_FIELD, value(chunk.rulebookId()),
                         "page_number", value((long) chunk.pageNumber())
                 ))
                 .build();
