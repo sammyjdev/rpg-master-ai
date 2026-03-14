@@ -1,0 +1,15 @@
+server:
+  port: 8082
+
+spring:
+  shell:
+    interactive:
+      enabled: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs
