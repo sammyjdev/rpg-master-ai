@@ -1,0 +1,38 @@
+# application-local.yml — local development configuration
+#
+# Copy this file to application-local.yml and fill in your values.
+# application-local.yml is in .gitignore and will never be committed.
+# This file (application-local.yml.example) IS committed as a setup reference.
+#
+# Usage:
+#   ./rpgm start          → runs with --spring.profiles.active=local,api
+#   ./gradlew bootRun     → add -Dspring.profiles.active=local,api
+
+spring:
+  datasource:
+    # PostgreSQL running via Docker Compose (see docker-compose.yml)
+    url: jdbc:postgresql://localhost:5432/rpgmaster
+    username: rpgmaster
+    password: rpgmaster
+    driver-class-name: org.postgresql.Driver
+
+  ai:
+    ollama:
+      # Ollama running via Docker Compose or local install
+      base-url: http://localhost:11434
+      embedding:
+        # bge-m3: 1024-dim, multilingual (EN + PT). Pull with: ollama pull bge-m3
+        model: bge-m3
+        options:
+          num-ctx: 2048
+      chat:
+        # qwen2.5:7b: strong multilingual model. Pull with: ollama pull qwen2.5:7b
+        model: qwen2.5:7b
+        options:
+          temperature: 0.1
+          num-ctx: 8192
+
+logging:
+  level:
+    com.rpgmaster: DEBUG
+    org.springframework.ai.ollama: DEBUG

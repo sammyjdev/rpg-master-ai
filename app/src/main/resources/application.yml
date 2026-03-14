@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: rpg-master-app
+
+  # Flyway manages schema — never use ddl-auto=create
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  # Java 21 Virtual Threads — always on
+  threads:
+    virtual:
+      enabled: true
+
+# Qdrant gRPC connection
+qdrant:
+  host: localhost
+  port: 6334
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      service: ${spring.application.name}
+
+# Spring Shell prompt
+spring.shell:
+  interactive:
+    enabled: true
+  script:
+    enabled: false
+
+logging:
+  level:
+    com.rpgmaster: INFO
+    org.springframework.ai: INFO
+    io.qdrant: WARN
