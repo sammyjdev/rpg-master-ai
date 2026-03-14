@@ -1,6 +1,8 @@
 package com.rpgmaster.app.adapter.outbound;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,15 @@ import reactor.core.publisher.Flux;
 public class SpringAiLlmAdapter implements LlmPort {
 
     private static final Logger log = LoggerFactory.getLogger(SpringAiLlmAdapter.class);
+
+    /** Unambiguous PT-only words — none are valid English words. */
+    private static final Set<String> PT_STOPWORDS = Set.of(
+            "qual", "quais", "quando", "porque", "está", "não", "também", "então",
+            "isso", "esse", "essa", "minha", "meu", "pelo", "pela", "você", "seria",
+            "funciona", "descanso", "personagem", "feitiço", "magia", "combate",
+            "habilidade", "aventura", "monstro", "regras", "rolar", "dado", "classe",
+            "como", "quanto", "quantos", "quem"
+    );
 
     private final ChatModel chatModel;
 
@@ -80,11 +91,6 @@ public class SpringAiLlmAdapter implements LlmPort {
             }
         }
         // Unambiguous PT-only words (none of these are English words)
-        var lower = text.toLowerCase();
-        return lower.matches(".*\\b(qual|quais|quando|porque|por que|está|não|também|então"
-                + "|isso|esse|essa|minha|meu|pelo|pela|você|seria"
-                + "|funciona|descanso|personagem|feitiço|magia|combate"
-                + "|habilidade|aventura|monstro|regras|rolar|dado|classe"
-                + "|como funciona|como se|o que|quanto|quantos|quem)\\b.*");
+        return Arrays.stream(text.toLowerCase().split("\\W+")).anyMatch(PT_STOPWORDS::contains);
     }
 }

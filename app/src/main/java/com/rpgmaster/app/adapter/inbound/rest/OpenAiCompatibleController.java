@@ -34,6 +34,7 @@ import reactor.core.publisher.Flux;
 public class OpenAiCompatibleController {
 
     private static final String ALL_RULEBOOKS_MODEL = "all-rulebooks";
+    private static final String CHAT_COMPLETION_CHUNK = "chat.completion.chunk";
     private static final int DEFAULT_TOP_K = 8;
     private static final float DEFAULT_THRESHOLD = 0.3f;
 
@@ -100,7 +101,7 @@ public class OpenAiCompatibleController {
 
         var firstChunk = chunkJson(new OpenAiChatCompletionChunk(
                 completionId,
-                "chat.completion.chunk",
+                CHAT_COMPLETION_CHUNK,
                 created,
                 request.model(),
                 List.of(new OpenAiChunkChoice(0, new OpenAiDelta("assistant", ""), null))
@@ -109,7 +110,7 @@ public class OpenAiCompatibleController {
         var tokenChunks = queryUseCase.queryStream(queryRequest)
                 .map(token -> chunkJson(new OpenAiChatCompletionChunk(
                         completionId,
-                        "chat.completion.chunk",
+                        CHAT_COMPLETION_CHUNK,
                         created,
                         request.model(),
                         List.of(new OpenAiChunkChoice(0, new OpenAiDelta(null, token), null))
@@ -117,7 +118,7 @@ public class OpenAiCompatibleController {
 
         var lastChunk = chunkJson(new OpenAiChatCompletionChunk(
                 completionId,
-                "chat.completion.chunk",
+                CHAT_COMPLETION_CHUNK,
                 created,
                 request.model(),
                 List.of(new OpenAiChunkChoice(0, new OpenAiDelta(null, null), "stop"))
