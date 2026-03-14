@@ -1,0 +1,9 @@
+plugins {
+    id 'java-library'
+}
+
+// Zero external dependencies — only Java 21 standard library.
+// This module contains Records, sealed types, and pure domain logic.
+dependencies {
+    // intentionally empty
+}
