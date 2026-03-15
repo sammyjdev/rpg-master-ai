@@ -4,7 +4,7 @@
 
 **Stack:** Java 21 · Spring Boot 3.3+ · Spring AI · Qdrant · PostgreSQL · Ollama
 
-[![Build](https://img.shields.io/github/actions/workflow/status/YOUR_USER/rpg-master-ai/ci.yml?branch=main&label=build)](https://github.com/YOUR_USER/rpg-master-ai/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/SamDev98/rpg-master-ai/ci.yml?branch=main&label=build)](https://github.com/SamDev98/rpg-master-ai/actions)
 [![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/projects/jdk/21/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
@@ -246,7 +246,7 @@ No feature tourism. Every modern Java feature has a deliberate architectural hom
 
 ```bash
 # Clone and build
-git clone https://github.com/YOUR_USER/rpg-master-ai.git
+git clone https://github.com/SamDev98/rpg-master-ai.git
 cd rpg-master-ai
 
 # Start infrastructure

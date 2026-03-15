@@ -156,6 +156,7 @@ cmd_ingest_all() {
 }
 
 cmd_ask() {
+    local question="$*"
     if [[ -z "$question" ]]; then
         echo "Usage: ./rpgm ask What is the Fireball spell?"
         return 1
@@ -166,11 +167,15 @@ cmd_ask() {
         return 1
     fi
 
-    curl -sf "$API_URL" \
+    local response
+    response=$(curl -sf "$API_URL" \
         -H "Content-Type: application/json" \
-        -d "{\"model\":\"all-rulebooks\",\"messages\":[{\"role\":\"user\",\"content\":\"${question}\"}]}" \
-        | python -m json.tool 2>/dev/null \
-        || echo "❌ Request failed"
+        -d "{\"model\":\"all-rulebooks\",\"messages\":[{\"role\":\"user\",\"content\":\"${question}\"}]}")
+    if [[ $? -ne 0 || -z "$response" ]]; then
+        echo "❌ Request failed"
+        return 1
+    fi
+    echo "$response" | grep -o '"content":"[^"]*"' | sed 's/"content":"//;s/"$//' | sed 's/\\n/\n/g'
 }
 
 cmd_help() {

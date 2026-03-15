@@ -6,7 +6,7 @@ package com.rpgmaster.domain;
  * @param question            The natural language question
  * @param rulebookId          Limits search to a specific rulebook; null = search all
  * @param topK                Number of chunks to retrieve from Qdrant (default: 5)
- * @param similarityThreshold Minimum cosine similarity score to include a chunk (default: 0.5)
+ * @param similarityThreshold Minimum cosine similarity score to include a chunk (default: 0.3)
  */
 public record QueryRequest(
         String question,
