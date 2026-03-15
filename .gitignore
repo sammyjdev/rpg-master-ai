@@ -50,3 +50,11 @@ pdfs/
 
 # Test reports
 test-results/
+
+# AI agent context files (internal — not for public repo)
+AGENT-*.md
+CLAUDE.md
+
+# LinkedIn drafts (local only)
+docs/linkedin-article-phase1.md
+docs/Version B*
