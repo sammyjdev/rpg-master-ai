@@ -31,11 +31,19 @@ public class SpringAiLlmAdapter implements LlmPort {
 
     /** Unambiguous PT-only words — none are valid English words. */
     private static final Set<String> PT_STOPWORDS = Set.of(
-            "qual", "quais", "quando", "porque", "está", "não", "também", "então",
-            "isso", "esse", "essa", "minha", "meu", "pelo", "pela", "você", "seria",
-            "funciona", "descanso", "personagem", "feitiço", "magia", "combate",
+            // Question words & conjunctions
+            "qual", "quais", "quando", "porque", "como", "quanto", "quantos", "quem", "que",
+            // Common verbs (not English words)
+            "pode", "foi", "faz", "ter", "seria", "funciona",
+            // Pronouns, articles & prepositions (not English words)
+            "uma", "seu", "isso", "esse", "essa", "minha", "meu", "pelo", "pela",
+            "mas", "ou", "das", "nos",
+            // Adverbs & particles
+            "está", "não", "também", "então", "você",
+            // RPG domain terms (PT-only)
+            "descanso", "personagem", "feitiço", "magia", "combate",
             "habilidade", "aventura", "monstro", "regras", "rolar", "dado", "classe",
-            "como", "quanto", "quantos", "quem"
+            "fogo", "dano", "conjurar", "ataque"
     );
 
     private final ChatModel chatModel;
@@ -86,7 +94,7 @@ public class SpringAiLlmAdapter implements LlmPort {
         for (char c : text.toCharArray()) {
             if (c == '\u00e3' || c == '\u00f5' || c == '\u00e7' // ã õ ç
                     || c == '\u00e0' || c == '\u00e2' || c == '\u00ea' // à â ê
-                    || c == '\u00ed' || c == '\u00fa' || c == '\u00f3') { // í ú ó
+                    || c == '\u00e9' || c == '\u00ed' || c == '\u00fa' || c == '\u00f3') { // é í ú ó
                 return true;
             }
         }

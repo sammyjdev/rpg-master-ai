@@ -318,6 +318,52 @@ The project vision and roadmap advanced faster than the implementation.
 
 The architecture documents added in this step separate current Step 1 reality from future phases.
 
+## Problem 16: Portuguese query without accented characters was answered in English
+
+**Symptom**
+
+A query like `"O que e Bola de Fogo?"` (without accent on `é`) returned an English answer despite
+being a Portuguese question. The same query with the accent (`"O que é Bola de Fogo?"`) also returned
+English before the fix, because `é` (`\u00e9`) was absent from the Unicode fast-path check in
+`isLikelyPortuguese()`.
+
+**Root Cause**
+
+Two compounding defects in `SpringAiLlmAdapter.isLikelyPortuguese()`:
+
+1. `é` (`\u00e9`) was missing from the Unicode fast-path character check. The fast path checked `ã õ ç à â ê` but not `é`, `í`, `ú`, or `ó` — the most common accented vowels in Brazilian Portuguese.
+2. The `PT_STOPWORDS` set was too small (12 words). High-frequency Portuguese words like `que`, `como`, `uma`, `pode`, `foi`, `fogo` were absent, so plain-text PT queries that happened to avoid all accents fell through both detection layers and were treated as English.
+
+**Investigation**
+
+The defect was discovered while running live benchmarks against the running system. The query
+`"O que é Bola de Fogo?"` sent via the OpenAI-compatible REST endpoint returned an English response.
+Inspection of the `isLikelyPortuguese()` method confirmed the missing `\u00e9` character check.
+
+**Final Resolution**
+
+1. Added `\u00e9` (é) to the Unicode fast-path loop, with all 10 PT-specific characters now
+   covered across three groups (`ã õ ç` / `à â ê` / `é í ú ó`).
+2. Expanded `PT_STOPWORDS` from 12 words to 35+, categorized into: question words, common verbs,
+   pronouns/prepositions, adverbs, and RPG domain vocabulary (`fogo`, `dano`, `ataque`, etc.).
+
+**Verification**
+
+Three test cases confirmed via the live API:
+- `"O que é Bola de Fogo?"` — now returns Portuguese ✅
+- `"O que e Bola de Fogo?"` (no accent) — now returns Portuguese ✅  
+- `"What is Fireball?"` — still returns English (no regression) ✅
+
+**Trade-Off**
+
+The solution remains heuristic. A proper language detection library (e.g., Apache Tika's language
+detector or `lingua`) is the correct long-term solution, but the heuristic is now demonstrably
+correct for the EN + PT use case and avoids an additional runtime dependency.
+
+**Related gap**
+
+[gap-analysis.md A.2 Gap #4](gap-analysis.md) — language detection fragility.
+
 **Trade-Off**
 
 The documentation is now more explicit about what is implemented versus what is planned, reducing ambiguity for reviewers.
