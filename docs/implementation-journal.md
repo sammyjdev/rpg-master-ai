@@ -350,8 +350,9 @@ Inspection of the `isLikelyPortuguese()` method confirmed the missing `\u00e9` c
 **Verification**
 
 Three test cases confirmed via the live API:
+
 - `"O que é Bola de Fogo?"` — now returns Portuguese ✅
-- `"O que e Bola de Fogo?"` (no accent) — now returns Portuguese ✅  
+- `"O que e Bola de Fogo?"` (no accent) — now returns Portuguese ✅
 - `"What is Fireball?"` — still returns English (no regression) ✅
 
 **Trade-Off**
