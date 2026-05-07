@@ -29,7 +29,7 @@ import com.rpgmaster.domain.IngestionResult;
  * <p>To run: {@code ./gradlew :app:integrationTest} (requires Docker)
  */
 @SpringBootTest
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @ActiveProfiles("test")
 class IngestionIntegrationTest {
 
@@ -61,6 +61,10 @@ class IngestionIntegrationTest {
     @Test
     @DisplayName("Ingesting a sample PDF stores chunks in Qdrant and Postgres")
     void ingestStoresChunksInQdrantAndPostgres() {
+        // Requires Ollama for the embedding step — skip gracefully in CI without Ollama
+        org.junit.jupiter.api.Assumptions.assumeTrue(isOllamaReachable(),
+                "Skipping: Ollama is not reachable. Start Ollama locally to run this test.");
+
         // Uses the bundled test fixture PDF (a small text-based PDF)
         var pdfPath = Path.of("src/integrationTest/resources/fixtures/sample-rules.pdf");
 
@@ -89,5 +93,15 @@ class IngestionIntegrationTest {
         var result = ingestionUseCase.ingest(fakePath, "dnd-5e-phb");
 
         assertThat(result).isInstanceOf(IngestionResult.Failed.class);
+    }
+
+    /** Quick connectivity probe — mirrors the guard used in QueryIntegrationTest. */
+    private boolean isOllamaReachable() {
+        try (var socket = new java.net.Socket()) {
+            socket.connect(new java.net.InetSocketAddress("localhost", 11434), 500);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

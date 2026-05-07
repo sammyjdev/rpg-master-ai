@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: ['main']
+    branches: ['master']
   pull_request:
-    branches: ['main']
+    branches: ['master']
 
 permissions:
   contents: read
@@ -28,3 +28,6 @@ jobs:
 
       - name: Build and unit tests
         run: ./gradlew build
+
+      - name: Integration tests
+        run: ./gradlew :app:integrationTest

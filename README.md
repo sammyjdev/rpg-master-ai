@@ -4,14 +4,36 @@
 
 **Stack:** Java 21 · Spring Boot 3.3+ · Spring AI · Qdrant · PostgreSQL · Ollama
 
-[![Build](https://img.shields.io/github/actions/workflow/status/SamDev98/rpg-master-ai/ci.yml?branch=main&label=build)](https://github.com/SamDev98/rpg-master-ai/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/SamDev98/rpg-master-ai/ci.yml?branch=master&label=build)](https://github.com/SamDev98/rpg-master-ai/actions)
 [![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/projects/jdk/21/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 ---
 
+## Current State
+
+Phase 1 complete and signed off. The RAG loop works end-to-end via Spring Shell CLI. A PDF rulebook can be ingested and queried with natural language questions answered by a local LLM.
+
+**Observed metrics (D&D 5e PHB):**
+
+- Chunks stored: 856
+- Ingestion time: ~63s
+- Query latency: <15s (`llama3.2:3b`)
+- Qdrant collection size after full test: 4,155 points
+- Embedding model: `bge-m3` (1024 dimensions, multilingual)
+- Chunking: 400 tokens / 80 token overlap
+- Similarity threshold: 0.3
+
+<!-- TODO: add demo GIF here -->
+![Demo](docs/demo.gif)
+
+Recording in progress.
+
+---
+
 ## Table of Contents
 
+- [Current State](#current-state)
 - [Vision](#vision)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
@@ -22,6 +44,7 @@
 - [Local Development](#local-development)
 - [Deployment](#deployment)
 - [Build in Public](#build-in-public)
+- [Architectural Decisions](#architectural-decisions)
 - [Risks & Mitigations](#risks--mitigations)
 - [Definition of Done](#definition-of-done)
 
@@ -90,7 +113,7 @@ The long-term target remains a multi-service architecture split into gateway, in
 | Language        | **Java 21 (LTS)**         | Virtual Threads for I/O-bound AI calls. Records for domain models. Pattern Matching for clean conditionals. |
 | Framework       | **Spring Boot 3.3+**      | Native Spring AI integration. Auto-configured VT executor. Job market alignment.                            |
 | AI Framework    | **Spring AI**             | Java-native model integration with adapters around chat and embeddings.                                     |
-| LLM (local)     | **Ollama (`qwen2.5:7b`)** | Zero-cost dev loop. Swappable via Spring AI abstraction. No API key needed locally.                         |
+| LLM (local)     | **Ollama (`llama3.2:3b`)** | Zero-cost dev loop. Swappable via Spring AI abstraction. No API key needed locally.                         |
 | Embedding Model | **Ollama (`bge-m3`)**     | Better multilingual retrieval for English and Portuguese questions.                                         |
 | LLM (prod)      | **AWS Bedrock**           | AWS-native deployment. Same Spring AI interface, config-only switch.                                        |
 | Vector DB       | **Qdrant**                | Payload filtering for multi-rulebook isolation. Rust performance. Spring AI first-class support.            |
@@ -105,7 +128,7 @@ The long-term target remains a multi-service architecture split into gateway, in
 rpg-master-ai/
 ├── settings.gradle
 ├── build.gradle
-├── docker-compose.yml              # Local: Qdrant + Postgres + Ollama + Open WebUI
+├── docker-compose.yml              # Local: Qdrant + Postgres + Open WebUI (Ollama on host)
 │
 ├── shared-domain/                  # Zero-dependency module
 │   └── src/main/java/.../domain/
@@ -240,7 +263,16 @@ No feature tourism. Every modern Java feature has a deliberate architectural hom
 
 - Java 21+
 - Docker + Docker Compose
-- Ollama running locally or via Docker (`qwen2.5:7b` and `bge-m3` pulled)
+- [Ollama](https://ollama.com/download) installed and running locally
+
+```bash
+# Pull required models (one-time setup)
+ollama pull bge-m3          # embedding model (~1.2 GB)
+ollama pull llama3.2:3b     # chat model (~2 GB)
+
+# Verify models are available
+ollama list
+```
 
 ### Quick Start
 
@@ -249,22 +281,20 @@ No feature tourism. Every modern Java feature has a deliberate architectural hom
 git clone https://github.com/SamDev98/rpg-master-ai.git
 cd rpg-master-ai
 
-# Start infrastructure
+# Start infrastructure (Qdrant + PostgreSQL)
 docker-compose up -d
 
 # Build all modules
 ./gradlew build
 
-# Start the Step 1 app
+# Start the CLI app
 ./rpgm start
 
-# Ingest a rulebook
+# Ingest a rulebook PDF
 ./rpgm ingest pdfs/phb.pdf dnd-5e-phb
 
-# Query via OpenAI-compatible API
-curl -s http://localhost:8082/v1/chat/completions \
-        -H "Content-Type: application/json" \
-        -d '{"model":"dnd-5e-phb","messages":[{"role":"user","content":"What is the Fireball spell and what damage does it deal?"}],"stream":false}'
+# Query
+./rpgm query "What is the Fireball spell and what damage does it deal?" dnd-5e-phb
 ```
 
 ### Docker Compose Services
@@ -273,8 +303,7 @@ curl -s http://localhost:8082/v1/chat/completions \
 # docker-compose.yml spins up:
 # - Qdrant        → localhost:6333 (dashboard: localhost:6333/dashboard)
 # - PostgreSQL    → localhost:5432
-# - Ollama        → localhost:11434
-# - Open WebUI    → localhost:3000
+# - Open WebUI    → localhost:3000 (connected to local Ollama at localhost:11434)
 ```
 
 ### Running Tests
@@ -311,11 +340,27 @@ Each phase maps to one LinkedIn article. Format: RPG analogy → technical probl
 
 ---
 
+## Architectural Decisions
+
+Key decisions with explicit trade-offs documented in [docs/adr/](docs/adr/):
+
+- [ADR-001](docs/adr/ADR-001-qdrant-as-vector-store.md): Qdrant as vector store
+- [ADR-002](docs/adr/ADR-002-ollama-for-local-models.md): Ollama for local models (zero API cost dev loop)
+- [ADR-004](docs/adr/ADR-004-hexagonal-architecture.md): Hexagonal architecture (ports and adapters)
+- [ADR-005](docs/adr/ADR-005-monolith-first-step1.md): Monolith-first for Phase 1
+- [ADR-007](docs/adr/ADR-007-chunking-strategy-400-80.md): Chunking strategy — 400 tokens / 80 overlap
+- [ADR-008](docs/adr/ADR-008-bge-m3-embeddings.md): bge-m3 embeddings — multilingual, 1024 dimensions
+- [ADR-009](docs/adr/ADR-009-similarity-threshold-0.3.md): Similarity threshold 0.3
+- [ADR-010](docs/adr/ADR-010-virtual-threads-for-io.md): Virtual Threads for I/O bound AI calls
+- [ADR-011](docs/adr/ADR-011-no-lombok.md): No Lombok — Records only
+
+---
+
 ## Risks & Mitigations
 
 | Risk                                       | Severity | Mitigation                                                      | Fallback                                  |
 | ------------------------------------------ | -------- | --------------------------------------------------------------- | ----------------------------------------- |
-| Ollama too slow for demo (>10s query)      | HIGH     | Use `bge-m3` for embeddings, `qwen2.5:7b` for generation        | OpenAI free tier for demo only            |
+| Ollama too slow for demo (>10s query)      | HIGH     | Use `bge-m3` for embeddings, `llama3.2:3b` for generation       | OpenAI free tier for demo only            |
 | Qdrant memory limit                        | MED      | Limit MVP to 3 rulebooks, 400-token chunks, max 10k vectors     | Qdrant Cloud free tier (1GB)              |
 | Spring AI API instability (still evolving) | MED      | Pin version, isolate behind adapter interface                   | Swap adapter behind EmbeddingPort/LlmPort |
 | PDF parsing quality for complex RPG tables | HIGH     | PDFBox + custom table detector. Document limitations in README. | Manual pre-processing script              |

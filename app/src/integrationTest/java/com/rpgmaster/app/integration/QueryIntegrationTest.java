@@ -33,7 +33,7 @@ import com.rpgmaster.domain.QueryRequest;
  * <p>To run: {@code ./gradlew :app:integrationTest} (requires Docker)
  */
 @SpringBootTest
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @ActiveProfiles("test")
 class QueryIntegrationTest {
 

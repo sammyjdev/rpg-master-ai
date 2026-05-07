@@ -10,7 +10,7 @@ spring:
       embedding:
         model: bge-m3
       chat:
-        model: qwen2.5:7b
+        model: llama3.2:3b
 
 qdrant:
   host: ${QDRANT_HOST:localhost}

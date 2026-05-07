@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.rpgmaster.app.application.port.EmbeddingPort;
 import com.rpgmaster.app.application.port.LlmPort;
 import com.rpgmaster.app.application.port.VectorStorePort;
+import com.rpgmaster.domain.LlmResult;
 import com.rpgmaster.domain.QueryRequest;
 import com.rpgmaster.domain.QueryResult;
 import com.rpgmaster.domain.SourceChunk;
@@ -76,15 +77,11 @@ public class QueryUseCase {
 
         // Step 3: Build context with page/rulebook metadata and call LLM (blocking for CLI)
         var contextTexts = buildContextWithMetadata(sources);
-        var answer = llmPort.generateStream(ragSystemPrompt, request.question(), contextTexts)
-                .collectList()
-                .block();
-
-        var fullAnswer = answer == null ? "" : String.join("", answer);
+        LlmResult llmResult = llmPort.generateBlocking(ragSystemPrompt, request.question(), contextTexts);
         var latencyMs = System.currentTimeMillis() - startMs;
 
-        log.info("Query complete in {}ms", latencyMs);
-        return new QueryResult(fullAnswer, sources, 0, latencyMs);
+        log.info("Query complete in {}ms, tokensUsed={}", latencyMs, llmResult.tokensUsed());
+        return new QueryResult(llmResult.text(), sources, llmResult.tokensUsed(), latencyMs);
     }
 
     /**

@@ -13,6 +13,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Component;
 
 import com.rpgmaster.app.application.port.LlmPort;
+import com.rpgmaster.domain.LlmResult;
 
 import reactor.core.publisher.Flux;
 
@@ -50,6 +51,27 @@ public class SpringAiLlmAdapter implements LlmPort {
 
     public SpringAiLlmAdapter(ChatModel chatModel) {
         this.chatModel = chatModel;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public LlmResult generateBlocking(String systemPrompt, String userPrompt, List<String> context) {
+        var augmentedUser = buildAugmentedPrompt(userPrompt, context);
+        log.debug("Calling LLM (blocking) with {} context chunks", context.size());
+
+        var prompt = new Prompt(List.of(
+                new SystemMessage(systemPrompt),
+                new UserMessage(augmentedUser)
+        ));
+
+        var response = chatModel.call(prompt);
+        var text = response.getResult().getOutput().getText();
+
+        var usage = response.getMetadata().getUsage();
+        var tokensUsed = usage != null ? (int) usage.getTotalTokens() : 0;
+
+        log.debug("LLM response: {} tokens used", tokensUsed);
+        return new LlmResult(text, tokensUsed);
     }
 
     /** {@inheritDoc} */
