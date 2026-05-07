@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Demo wrapper — produces realistic output for VHS recording
+# Not for production use.
+
+CMD="${1:-}"
+shift || true
+
+case "$CMD" in
+  status)
+    echo "── Docker Infrastructure ──"
+    echo "  qdrant     Up (healthy)   0.0.0.0:6333->6333/tcp"
+    echo "  postgres   Up (healthy)   0.0.0.0:5432->5432/tcp"
+    echo "  ollama     Up             0.0.0.0:11434->11434/tcp"
+    echo ""
+    echo "── RPG Master API ──"
+    echo "  PID:    18423"
+    echo "  Port:   8082"
+    echo "  Health: ✅ {\"status\":\"UP\"}"
+    ;;
+  ingest)
+    PDF="${1:-pdfs/phb.pdf}"
+    ID="${2:-dnd-5e-phb}"
+    echo "📚 Ingesting: $PDF as '$ID'..."
+    sleep 0.4
+    echo "   [  0%] Parsing PDF..."
+    sleep 0.3
+    echo "   [ 30%] Chunking text (400 tokens / 80 overlap)..."
+    sleep 0.3
+    echo "   [ 60%] Generating embeddings (bge-m3)..."
+    sleep 0.4
+    echo "   [ 90%] Storing 312 chunks → Qdrant..."
+    sleep 0.2
+    echo "✅ Ingestion complete: 312 chunks stored for '$ID'"
+    ;;
+  ask)
+    echo "🔍 Searching rulebook: dnd-5e-phb..."
+    sleep 0.4
+    echo ""
+    echo "Fireball is a 3rd-level evocation spell. You hurl a bright streak"
+    echo "of flame that explodes with a low roar, dealing 8d6 fire damage in"
+    echo "a 20-foot-radius sphere. A creature can make a Dexterity saving"
+    echo "throw for half damage."
+    echo ""
+    echo "  Sources: Player's Handbook p.241 (3 chunks, score ≥ 0.87)"
+    ;;
+  *)
+    echo "Usage: rpgm [status|ingest|ask]"
+    ;;
+esac
