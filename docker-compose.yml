@@ -29,22 +29,6 @@ services:
       timeout: 5s
       retries: 5
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: rpg-ollama
-    ports:
-      - '11434:11434'
-    volumes:
-      - ollama_data:/root/.ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    restart: unless-stopped
-
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: rpg-open-webui
@@ -52,14 +36,11 @@ services:
       - '3000:8080'
     volumes:
       - open_webui_data:/app/backend/data
-    depends_on:
-      - ollama
     environment:
-      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
     restart: unless-stopped
 
 volumes:
   qdrant_data:
   postgres_data:
-  ollama_data:
   open_webui_data:

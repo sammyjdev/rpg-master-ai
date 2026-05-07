@@ -79,6 +79,13 @@ tasks.register('integrationTest', Test) {
     useJUnitPlatform()
     jvmArgs '-XX:+EnableDynamicAgentLoading'
     shouldRunAfter test
+
+    // Allow explicit override for Docker endpoint when needed.
+    def dockerHost = System.getenv('DOCKER_HOST') ?: System.getProperty('DOCKER_HOST')
+    if (dockerHost) {
+        systemProperty 'DOCKER_HOST', dockerHost
+        environment 'DOCKER_HOST', dockerHost
+    }
 }
 
 bootJar {
