@@ -6,27 +6,24 @@ Set Width 1280
 Set Height 720
 Set Padding 24
 Set TypingSpeed 70ms
+Set Shell "bash"
 
 Type "cd /workspace"
 Enter
-Sleep 400ms
+Sleep 300ms
 
-Type "chmod +x docs/rpgm-demo"
+Type "export RPGM_API_HOST=host.docker.internal RPGM_HOST_WORKSPACE=C:/Users/samde/dev/rpg-master"
 Enter
 Sleep 300ms
 
-Type "alias rpgm='./docs/rpgm-demo'"
-Enter
-Sleep 200ms
-
-Type "rpgm status"
-Enter
-Sleep 1800ms
-
-Type "rpgm ingest pdfs/phb.pdf dnd-5e-phb"
-Enter
-Sleep 2800ms
-
-Type "rpgm ask What is the Fireball spell?"
+Type "./rpgm status"
 Enter
 Sleep 3000ms
+
+Type "./rpgm ingest pdfs/phb.pdf dnd-5e-phb"
+Enter
+Sleep 35000ms
+
+Type "./rpgm ask What is the Fireball spell?"
+Enter
+Sleep 30000ms
