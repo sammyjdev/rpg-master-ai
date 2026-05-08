@@ -4,10 +4,12 @@
 set -euo pipefail
 
 APP_PORT=8082
+# Allow override for Docker/remote usage: RPGM_API_HOST=host.docker.internal
+_API_HOST="${RPGM_API_HOST:-localhost}"
 PID_FILE=".app.pid"
 LOG_FILE=".app.log"
-HEALTH_URL="http://localhost:${APP_PORT}/actuator/health"
-API_URL="http://localhost:${APP_PORT}/v1/chat/completions"
+HEALTH_URL="http://${_API_HOST}:${APP_PORT}/actuator/health"
+API_URL="http://${_API_HOST}:${APP_PORT}/v1/chat/completions"
 
 is_running() {
     [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
@@ -84,6 +86,17 @@ cmd_restart() {
 }
 
 cmd_status() {
+    if [[ -n "${RPGM_API_HOST:-}" ]]; then
+        # Remote/Docker mode — skip local process checks
+        echo "── RPG Master API ──"
+        echo "  Host:   ${_API_HOST}:${APP_PORT}"
+        local health
+        health=$(curl -sf "$HEALTH_URL" 2>/dev/null) && \
+            echo "  Health: ✅ UP" || \
+            echo "  Health: ❌ unreachable"
+        return
+    fi
+
     echo "── Docker Infrastructure ──"
     docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null \
         || echo "  Docker not available"
@@ -128,13 +141,18 @@ cmd_ingest() {
     fi
 
     local abs_path
-    abs_path="$(cd "$(dirname "$pdf_path")" && pwd)/$(basename "$pdf_path")"
-    # Convert Git Bash /c/Users/... → C:/Users/... for Java on Windows
-    abs_path=$(echo "$abs_path" | sed 's|^/\([a-zA-Z]\)/|\1:/|')
+    if [[ -n "${RPGM_HOST_WORKSPACE:-}" ]]; then
+        # Docker mode: map relative path to host filesystem path
+        abs_path="${RPGM_HOST_WORKSPACE}/${pdf_path}"
+    else
+        abs_path="$(cd "$(dirname "$pdf_path")" && pwd)/$(basename "$pdf_path")"
+        # Convert Git Bash /c/Users/... → C:/Users/... for Java on Windows
+        abs_path=$(echo "$abs_path" | sed 's|^/\([a-zA-Z]\)/|\1:/|')
+    fi
 
     echo "📚 Ingesting: $abs_path as '$rulebook_id'..."
     local response
-    response=$(curl -sf http://localhost:8082/v1/ingest \
+    response=$(curl -sf "http://${_API_HOST}:${APP_PORT}/v1/ingest" \
         -H "Content-Type: application/json" \
         -d "{\"path\": \"$abs_path\", \"rulebookId\": \"$rulebook_id\"}" 2>&1)
 
