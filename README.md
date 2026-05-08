@@ -18,16 +18,13 @@ Phase 1 complete and signed off. The RAG loop works end-to-end via Spring Shell 
 
 - Chunks stored: 856
 - Ingestion time: ~63s
-- Query latency: <15s (`llama3.2:3b`)
+- Query latency: <15s (`qwen2.5:7b`)
 - Qdrant collection size after full test: 4,155 points
 - Embedding model: `bge-m3` (1024 dimensions, multilingual)
 - Chunking: 400 tokens / 80 token overlap
 - Similarity threshold: 0.3
 
-<!-- TODO: add demo GIF here -->
 ![Demo](docs/demo.gif)
-
-Recording in progress.
 
 ---
 
