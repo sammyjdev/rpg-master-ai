@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/rpgmaster
+    username: rpgmaster
+    password: rpgmaster
+    driver-class-name: org.postgresql.Driver
+
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        model: bge-m3
+        options:
+          num-ctx: 2048
+      chat:
+        model: qwen2.5:7b
+        options:
+          temperature: 0.1
+          num-ctx: 8192
+
+logging:
+  level:
+    com.rpgmaster: DEBUG
+    org.springframework.ai.ollama: DEBUG
