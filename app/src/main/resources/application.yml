@@ -23,6 +23,12 @@ qdrant:
   host: localhost
   port: 6334
 
+# RAG retrieval defaults — single source of truth for REST and CLI
+rpg:
+  retrieval:
+    top-k: 8
+    similarity-threshold: 0.3
+
 # Actuator endpoints
 management:
   endpoints:
