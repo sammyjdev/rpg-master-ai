@@ -4,7 +4,7 @@
 
 **Stack:** Java 21 · Spring Boot 3.3+ · Spring AI · Qdrant · PostgreSQL · Ollama
 
-[![Build](https://img.shields.io/github/actions/workflow/status/SamDev98/rpg-master-ai/ci.yml?branch=master&label=build)](https://github.com/SamDev98/rpg-master-ai/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/sammyjdev/rpg-master-ai/ci.yml?branch=master&label=build)](https://github.com/sammyjdev/rpg-master-ai/actions)
 [![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/projects/jdk/21/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
@@ -13,6 +13,8 @@
 ## Current State
 
 Phase 1 complete and signed off. The RAG loop works end-to-end via Spring Shell CLI. A PDF rulebook can be ingested and queried with natural language questions answered by a local LLM.
+
+**Next up — Phase 2: Evaluation & Observability.** Prove the RAG works with numbers, not vibes — golden Q&A harness, prompt versioning, Prometheus + Grafana.
 
 **Observed metrics (D&D 5e PHB):**
 
@@ -51,10 +53,11 @@ Phase 1 complete and signed off. The RAG loop works end-to-end via Spring Shell 
 
 RPG Master AI serves two explicit goals:
 
-| Goal                 | Description                                                                                                             |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| **Portfolio Signal** | Demonstrates Java 21 features (Virtual Threads, Records, Pattern Matching, Structured Concurrency) in a real AI context |
-| **Learning Vehicle** | Covers Spring AI, vector databases, and multi-rulebook RAG architecture incrementally                                   |
+| Goal                 | Description                                                                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **AI Engineer Signal** | Production-grade RAG with measurable quality: golden Q&A eval, prompt versioning, observability of tokens/latency/cost, multi-model swap |
+| **Java 21 Showcase** | Records, Sealed types, Pattern Matching, Virtual Threads, Structured Concurrency — every feature with a deliberate architectural home       |
+| **Zero-Cost Portfolio** | Runs free locally (Ollama). Free cloud demo via NVIDIA NIM. No recurring spend required to clone, run, or evaluate                       |
 
 The system follows a **Build in Public** strategy: each phase ships working software AND generates a LinkedIn article.
 
@@ -98,8 +101,8 @@ The long-term target remains a multi-service architecture split into gateway, in
 | ------------ | ---------------- | --------------------------------------------- | ---------------------- |
 | Vector Store | Qdrant           | Text chunks + embeddings + rulebook namespace | $O(\log n)$ ANN search |
 | Relational   | PostgreSQL       | Documents, ingestion jobs, audit log          | ACID, FK integrity     |
-| Object Store | AWS S3 (planned) | Raw PDFs, processing artifacts                | Phase 3+               |
-| Cache        | Redis (planned)  | Semantic cache (query → response)             | Phase 4+               |
+| Object Store | AWS S3 (future)  | Raw PDFs, processing artifacts                | Phase 5 — prod validation |
+| Cache        | Redis (future)   | Semantic cache (query → response)             | Phase 5 — prod validation |
 
 ---
 
@@ -110,12 +113,13 @@ The long-term target remains a multi-service architecture split into gateway, in
 | Language        | **Java 21 (LTS)**         | Virtual Threads for I/O-bound AI calls. Records for domain models. Pattern Matching for clean conditionals. |
 | Framework       | **Spring Boot 3.3+**      | Native Spring AI integration. Auto-configured VT executor. Job market alignment.                            |
 | AI Framework    | **Spring AI**             | Java-native model integration with adapters around chat and embeddings.                                     |
-| LLM (local)     | **Ollama (`llama3.2:3b`)** | Zero-cost dev loop. Swappable via Spring AI abstraction. No API key needed locally.                         |
+| LLM (local)     | **Ollama (`qwen2.5:7b`)** | Zero-cost dev loop. Swappable via Spring AI abstraction. No API key needed locally.                         |
 | Embedding Model | **Ollama (`bge-m3`)**     | Better multilingual retrieval for English and Portuguese questions.                                         |
-| LLM (prod)      | **AWS Bedrock**           | AWS-native deployment. Same Spring AI interface, config-only switch.                                        |
+| LLM (cloud-free) | **NVIDIA NIM**           | Free-tier catalog (Llama 3.3, Nemotron, Mixtral, …). OpenAI-compatible. Enables multi-model eval comparison. Phase 3. |
+| LLM (prod, future) | **AWS Bedrock**       | Same `LlmPort` adapter swap. Phase 5 — validates the hexagonal abstraction against a paid enterprise provider.        |
 | Vector DB       | **Qdrant**                | Payload filtering for multi-rulebook isolation. Rust performance. Spring AI first-class support.            |
 | Build           | **Gradle (multi-module)** | Each service is a submodule. Shared lib as internal dependency. Faster incremental builds.                  |
-| IaC             | **Terraform (planned)**   | Reserved for later production deployment phases.                                                            |
+| IaC             | **Terraform (future)**    | Reserved for Phase 5 production validation. Not required for portfolio scope.                               |
 
 ---
 
@@ -155,87 +159,113 @@ rpg-master-ai/
 
 ## Implementation Phases
 
-### Phase 1 — Foundation Boss `Weeks 1-2`
+> Roadmap rewritten to optimize for **AI Engineer positioning** and **zero recurring cost**. Kafka, Terraform, and Bedrock are deferred to Phase 5 as production-validation extensions — not required for the portfolio story.
+
+### Phase 1 — Foundation ✅ DONE `Weeks 1-2`
 
 > Prove the RAG loop works end-to-end. No microservices, no UI. Just the loop.
 
-**Deliverable:** Spring Boot monolith that reads a D&D 5e PDF and answers questions via CLI.
+**Deliverable:** Spring Boot monolith that reads a D&D 5e PDF and answers questions via CLI + OpenAI-compatible REST.
 
-**Java 21 features introduced:** `Record` for domain models, `SequencedCollection` for chunk ordering.
+**Java 21 features introduced:** `Record` for domain models, `Sealed` types for `IngestionResult`, `Pattern Matching`, `Virtual Threads` for I/O.
 
-| Task                            | Tech                    | Learning                                  |
-| ------------------------------- | ----------------------- | ----------------------------------------- |
-| Gradle multi-module setup       | Gradle 8.x              | Project structure foundation              |
-| PDF ingestion                   | Apache PDFBox + Records | Text extraction, page boundaries          |
-| Chunking (fixed-size + overlap) | Java Streams            | Chunk size tradeoffs (512 vs 1024 tokens) |
-| Embedding generation            | Spring AI + Ollama      | What embeddings actually are              |
-| Qdrant local via Docker Compose | Qdrant Java client      | Vector upsert, collection creation        |
-| CLI query interface             | Spring Shell            | Retrieval + augmentation loop             |
-
----
-
-### Phase 2 — API Layer & Multi-Rulebook `Weeks 3-4`
-
-> Expose as documented REST API. Support multiple rulebooks with namespace isolation.
-
-**Deliverable:** REST API hardening, documented contracts, multi-rulebook isolation, and stronger operational boundaries.
-
-**Java 21 features introduced:** `Virtual Threads` for concurrent PDF processing, `Pattern Matching` for response classification, `Sealed Classes` for `IngestionResult`.
-
-| Task                           | Tech                     | Learning                       |
-| ------------------------------ | ------------------------ | ------------------------------ |
-| Extract API Gateway service    | Spring Cloud Gateway     | Routing, auth filters          |
-| Swagger / OpenAPI 3.1          | springdoc-openapi        | API-first documentation        |
-| Rulebook namespace in Qdrant   | Qdrant payload filter    | Multi-tenant vector isolation  |
-| Virtual Thread executor config | Java 21 VT + Spring      | Pinning gotchas, thread naming |
-| PostgreSQL metadata schema     | Spring Data JPA + Flyway | Migration versioning           |
+| Task                            | Tech                    | Status |
+| ------------------------------- | ----------------------- | ------ |
+| Gradle multi-module setup       | Gradle 8.x              | ✅ |
+| PDF ingestion                   | Apache PDFBox + Records | ✅ |
+| Chunking (400 tokens / 80 overlap) | Java Streams         | ✅ |
+| Embeddings (`bge-m3`, 1024-dim) | Spring AI + Ollama      | ✅ |
+| Qdrant local via Docker Compose | Qdrant Java client      | ✅ |
+| CLI + OpenAI-compatible REST    | Spring Shell + WebFlux  | ✅ |
+| Swagger / OpenAPI 3.1           | springdoc-openapi       | ✅ |
+| 11 ADRs + gap-analysis          | docs/adr/               | ✅ |
 
 ---
 
-### Phase 3 — Async Ingestion Pipeline `Weeks 5-6`
+### Phase 2 — Evaluation & Observability `Weeks 3-4`
 
-> Decouple upload from processing. Large PDFs no longer block the API thread.
+> Stop guessing. Every RAG change from here on is justified by a number in the eval report.
 
-**Deliverable:** Kafka-based ingestion with retry, dead-letter queue, and ingestion status endpoint.
+**Deliverable:** Golden Q&A harness, prompt versioning, Prometheus + Grafana, gap-analysis quick wins closed.
 
-**Java 21 features introduced:** `Structured Concurrency` for coordinating embedding + storage fanout.
+**Why this phase exists:** the single biggest gap in most RAG portfolios is the absence of evaluation. This is the highest-ROI work for an AI Engineer positioning.
 
-| Task                                   | Tech                          | Learning                                   |
-| -------------------------------------- | ----------------------------- | ------------------------------------------ |
-| Document Processor as separate service | Spring Kafka                  | Consumer group design, offset management   |
-| Structured Concurrency fanout          | Java 21 `StructuredTaskScope` | `ShutdownOnFailure` vs `ShutdownOnSuccess` |
-| Dead-letter queue + retry policy       | Kafka + `@RetryableTopic`     | Idempotency keys, at-least-once delivery   |
-| Ingestion job status API               | PostgreSQL polling            | Job state machine design                   |
+| Task                                              | Tech                          | Learning                                          |
+| ------------------------------------------------- | ----------------------------- | ------------------------------------------------- |
+| Gap-analysis quick wins (dead `rag-user.st`, topK align, Bean Validation) | — | Closing the obvious holes first                   |
+| Golden Q&A dataset (~30 questions, EN + PT)       | JSON fixture                  | Eval-set design for domain-specific RAG           |
+| `./gradlew eval` harness                          | Java + LLM-as-judge or keyword match | recall@k, citation accuracy, faithfulness scoring |
+| Prompt versioning + per-query logging             | `.st` header + SLF4J          | Reproducibility, regression tracking              |
+| Micrometer custom meters                          | Spring Actuator + Prometheus  | Token / latency / cost metrics                    |
+| Grafana dashboard committed as code               | Grafana JSON + compose        | Observability-as-code                             |
+| Eval badges in README                             | shields.io                    | Public proof, not narrative                       |
 
 ---
 
-### Phase 4 — Observability & Production Hardening `Weeks 7-8`
+### Phase 3 — Cloud-Free LLM Swap + Retrieval Quality `Weeks 5-6`
 
-> Make the system observable. Track latency, token usage, cache hit rate.
+> Swap providers via the hexagonal port — Ollama vs NVIDIA NIM — and let the eval harness pick the winner. Improve retrieval based on measured gaps.
 
-**Deliverable:** Grafana dashboard. Redis semantic cache. AWS deployment via Terraform.
+**Deliverable:** NIM adapter, comparative multi-model eval report, re-ranking + dedup + context budget. Still zero recurring cost — NIM free tier handles demo traffic.
 
-| Task                                    | Tech                      | Learning                           |
-| --------------------------------------- | ------------------------- | ---------------------------------- |
-| Custom metrics: token cost, chunk count | Micrometer + Prometheus   | Custom meter registry              |
-| Semantic cache with Redis               | Redis Vector + Spring AI  | Cosine similarity threshold tuning |
-| Distributed tracing                     | OpenTelemetry + AWS X-Ray | Trace context propagation          |
-| Terraform AWS deployment                | ECS Fargate + MSK + RDS   | IaC for AI systems                 |
+**Java 21 features introduced:** `Structured Concurrency` for parallel multi-model eval fanout.
+
+| Task                                | Tech                                      | Learning                                  |
+| ----------------------------------- | ----------------------------------------- | ----------------------------------------- |
+| NVIDIA NIM adapter                  | Spring AI OpenAI-compatible client        | Hexagonal port pays off — config-only swap |
+| Multi-model comparative eval        | Golden Q&A × {Ollama, NIM models}         | Benchmarking LLMs for a specific domain   |
+| Reciprocal Rank Fusion re-ranker    | Pure Java                                 | Beyond raw cosine similarity              |
+| Chunk dedup by page overlap         | Java Streams                              | Cleaner context, fewer tokens             |
+| Context token budget                | Tokenizer estimate + truncation           | Window management                         |
+| Eval report diff: before vs after   | Markdown                                  | Provable improvement                      |
+
+---
+
+### Phase 4 — Multi-Rulebook + Distribution `Weeks 7-8`
+
+> Prove namespace isolation with a second rulebook. Ship the whole thing as one `docker run`.
+
+**Deliverable:** Pathfinder 2e ingested, isolation integration test, multi-arch image on GHCR, README inverted for 5-minute onboarding.
+
+| Task                                              | Tech                          | Learning                                  |
+| ------------------------------------------------- | ----------------------------- | ----------------------------------------- |
+| Pathfinder 2e ingestion                           | Existing pipeline             | Multi-tenant proof                        |
+| Namespace isolation integration test              | Testcontainers + Qdrant       | Payload filtering correctness             |
+| GHCR Docker image (multi-arch)                    | GitHub Actions buildx         | Distribution                              |
+| README inverted: "Try in 5 minutes" first         | —                             | Documentation UX                          |
+| Cost & Hardware Footprint section                 | Real measurements             | Honest portfolio signal                   |
+| Demo GIF #2: both rulebooks isolated              | VHS                           | Show, don't tell                          |
+
+---
+
+### Phase 5 — Production Validation `Future, time-permitting`
+
+> Only after the portfolio story is closed. Validates the hexagonal architecture against real enterprise concerns.
+
+**Deliverable:** Bedrock adapter (paid), Terraform deploy, optional Kafka async ingestion. Each item is justified independently — none are part of the core portfolio scope.
+
+| Task                                | Tech                                      | When to do it                                |
+| ----------------------------------- | ----------------------------------------- | -------------------------------------------- |
+| AWS Bedrock LLM + embeddings adapter | Spring AI + AWS SDK                       | Proves `LlmPort` survives a paid provider    |
+| Terraform AWS deploy (ECS + RDS + Qdrant Cloud) | IaC                          | Only if targeting AWS-focused role           |
+| Async ingestion via Kafka + DLQ     | Spring Kafka + `StructuredTaskScope`      | Only when ingestion volume justifies it      |
+| Redis semantic cache                | Redis Vector + Spring AI                  | Only when query volume justifies it          |
+| Distributed tracing                 | OpenTelemetry                             | Only when running across multiple services   |
 
 ---
 
 ## Sprint Plan
 
-| Week | Sprint | Key Tasks                                                             | Done Criteria                                                 |
-| ---- | ------ | --------------------------------------------------------------------- | ------------------------------------------------------------- |
-| 1    | 1.1    | Gradle setup, Docker Compose, PDFBox, first chunk stored              | PDF parsed, chunks visible in Qdrant dashboard                |
-| 2    | 1.2    | Spring AI embedding, similarity search, CLI query, first RAG response | "What is a Fireball?" returns correct D&D 5e answer           |
-| 3    | 2.1    | REST API design, OpenAPI spec, request validation, JWT skeleton       | Swagger or equivalent contract docs for the Step 1 API        |
-| 4    | 2.2    | Multi-rulebook namespace, Pathfinder 2e ingested, Virtual Threads     | D&D and Pathfinder queries correctly isolated                 |
-| 5    | 3.1    | Kafka setup, document-processor service, `DocumentIngested` event     | Upload triggers async processing, status returns `PROCESSING` |
-| 6    | 3.2    | Structured Concurrency fanout, DLQ, retry policy                      | Failed ingestion retried 3x then moves to DLQ                 |
-| 7    | 4.1    | Micrometer metrics, Grafana dashboard, token cost tracking            | Dashboard shows latency P50/P99, token spend, cache hit rate  |
-| 8    | 4.2    | Redis semantic cache, OpenTelemetry tracing, Terraform AWS deploy     | System running on ECS, public URL, README with demo GIF       |
+| Week | Sprint | Key Tasks                                                                          | Done Criteria                                                            |
+| ---- | ------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 1    | 1.1 ✅ | Gradle setup, Docker Compose, PDFBox, first chunk stored                           | PDF parsed, chunks visible in Qdrant dashboard                           |
+| 2    | 1.2 ✅ | Spring AI embedding, similarity search, CLI query, first RAG response, OpenAPI    | "What is a Fireball?" returns correct D&D 5e answer; Swagger live        |
+| 3    | 2.1    | Gap-analysis quick wins + golden Q&A dataset + eval harness skeleton               | `./gradlew eval` runs and produces `eval/reports/*.md`                   |
+| 4    | 2.2    | Micrometer + Prometheus + Grafana + prompt versioning + eval badges                | Dashboard shows P50/P99, token usage; README shows live eval badges      |
+| 5    | 3.1    | NVIDIA NIM adapter + comparative multi-model eval                                  | Eval report compares Ollama vs ≥2 NIM models on the same golden set     |
+| 6    | 3.2    | RRF re-ranking, chunk dedup, context budget — all gated by eval                    | Eval recall@k and faithfulness measurably improve vs Phase 2 baseline    |
+| 7    | 4.1    | Pathfinder 2e ingestion + namespace isolation integration test                     | Cross-rulebook query test passes; D&D answers don't leak Pathfinder      |
+| 8    | 4.2    | GHCR multi-arch image, README inversion, Cost & Hardware Footprint, Demo GIF #2    | `docker run ghcr.io/sammyjdev/rpg-master-ai` works in <5 min, end-to-end |
 
 ---
 
@@ -265,7 +295,7 @@ No feature tourism. Every modern Java feature has a deliberate architectural hom
 ```bash
 # Pull required models (one-time setup)
 ollama pull bge-m3          # embedding model (~1.2 GB)
-ollama pull llama3.2:3b     # chat model (~2 GB)
+ollama pull qwen2.5:7b      # chat model (~4.7 GB)
 
 # Verify models are available
 ollama list
@@ -275,7 +305,7 @@ ollama list
 
 ```bash
 # Clone and build
-git clone https://github.com/SamDev98/rpg-master-ai.git
+git clone https://github.com/sammyjdev/rpg-master-ai.git
 cd rpg-master-ai
 
 # Start infrastructure (Qdrant + PostgreSQL)
@@ -328,12 +358,13 @@ Production deployment is planned for a later phase. The current repository does 
 
 Each phase maps to one LinkedIn article. Format: RPG analogy → technical problem → solution → code snippet → lesson.
 
-| Phase | Article                                                                                       | Week |
-| ----- | --------------------------------------------------------------------------------------------- | ---- |
-| 1     | _I gave a D&D Dungeon Master a Java backend — here's what the RAG loop actually looks like_   | 2    |
-| 2     | _Multi-rulebook RAG: how I used Qdrant payload filtering so D&D never bleeds into Pathfinder_ | 4    |
-| 3     | _Why I added Kafka to a 4-service RAG system (hint: it's not about scale)_                    | 6    |
-| 4     | _The AI demo nobody builds: tracking token cost per query in production Java_                 | 8    |
+| Phase | Article                                                                                                       | Week |
+| ----- | ------------------------------------------------------------------------------------------------------------- | ---- |
+| 1     | _I gave a D&D Dungeon Master a Java backend — here's what the RAG loop actually looks like_                   | 2    |
+| 2     | _How I stopped guessing if my RAG works — building an eval harness for a D&D rulebook bot in Java_            | 4    |
+| 3     | _Same Java code, three LLMs: how the hexagonal port survived Ollama, NVIDIA NIM, and a comparative benchmark_ | 6    |
+| 4     | _Multi-tenant RAG with Qdrant payload filtering — and why your second rulebook is the real test_              | 8    |
+| 5     | _Took my RAG from Ollama to AWS Bedrock without changing one line of business logic_ — `future`               | —    |
 
 ---
 
@@ -357,26 +388,32 @@ Key decisions with explicit trade-offs documented in [docs/adr/](docs/adr/):
 
 | Risk                                       | Severity | Mitigation                                                      | Fallback                                  |
 | ------------------------------------------ | -------- | --------------------------------------------------------------- | ----------------------------------------- |
-| Ollama too slow for demo (>10s query)      | HIGH     | Use `bge-m3` for embeddings, `llama3.2:3b` for generation       | OpenAI free tier for demo only            |
+| Ollama too slow for demo (>10s query)      | HIGH     | `bge-m3` embeddings + `qwen2.5:7b` chat, both on Ollama         | NVIDIA NIM free tier (Phase 3) for demos  |
 | Qdrant memory limit                        | MED      | Limit MVP to 3 rulebooks, 400-token chunks, max 10k vectors     | Qdrant Cloud free tier (1GB)              |
-| Spring AI API instability (still evolving) | MED      | Pin version, isolate behind adapter interface                   | Swap adapter behind EmbeddingPort/LlmPort |
-| PDF parsing quality for complex RPG tables | HIGH     | PDFBox + custom table detector. Document limitations in README. | Manual pre-processing script              |
-| AWS costs during demo                      | MED      | `terraform destroy` after recording. Spot instances for ECS.    | Keep prod on Docker Compose               |
+| Spring AI API instability (still evolving) | MED      | Pin version, isolate behind adapter interface                   | Swap adapter behind `EmbeddingPort` / `LlmPort` |
+| PDF parsing quality for complex RPG tables | HIGH     | PDFBox + boilerplate filter. Document limitations in README.    | Manual pre-processing script              |
+| Eval set bias / overfitting to golden Q&A  | MED      | Keep golden set small, curated, diverse (EN + PT, multi-domain) | Rotate held-out questions per phase       |
+| NIM free-tier rate limits                  | LOW      | Cache results during eval; throttle to provider limits          | Fall back to Ollama for the same eval     |
 
 ---
 
 ## Definition of Done
 
-Portfolio-ready when a senior engineer can evaluate all of these without asking questions.
+Portfolio-ready when a senior AI engineer can evaluate all of these without asking questions.
 
-- [ ] README with architecture diagram, local setup under 5 minutes
+- [x] README with architecture diagram and local setup
+- [ ] README inverted: "Try in 5 minutes" section at the top, runs from a single `docker run`
 - [x] Swagger UI live with all endpoints documented and examples
-- [ ] At least 2 rulebooks ingested and queryable (D&D 5e PHB + Pathfinder 2e Core)
-- [ ] Integration tests with Testcontainers (no mocks for infra)
-- [ ] GitHub Actions CI: build + test on every PR (green badge on README)
+- [x] Integration tests with Testcontainers (no mocks for infra)
+- [x] GitHub Actions CI: build + test on every PR (green badge on README)
 - [x] ADR files for key Step 1 decisions (`docs/adr/`)
-- [ ] Metrics endpoint: latency P99, token cost, cache hit rate visible
-- [ ] Public demo URL or recorded GIF walkthrough in README
+- [ ] Golden Q&A eval harness committed; latest report in `eval/reports/`
+- [ ] README shows live eval badges (recall@k, faithfulness, P99)
+- [ ] Metrics endpoint: latency P99, token usage per query, cost estimate visible in Grafana
+- [ ] Comparative eval across ≥3 LLM configurations (Ollama + NIM models)
+- [ ] At least 2 rulebooks ingested and queryable (D&D 5e PHB + Pathfinder 2e Core)
+- [ ] Multi-arch Docker image published on GHCR
+- [ ] Cost & Hardware Footprint section with real numbers
 - [ ] 4 LinkedIn articles published, each linked to a specific commit
 
 ---
