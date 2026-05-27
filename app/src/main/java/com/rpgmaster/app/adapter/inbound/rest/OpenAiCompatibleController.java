@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rpgmaster.app.application.QueryUseCase;
 import com.rpgmaster.app.application.port.DocumentRepository;
+import com.rpgmaster.app.config.RetrievalProperties;
 import com.rpgmaster.domain.QueryRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,19 +36,20 @@ public class OpenAiCompatibleController {
 
     private static final String ALL_RULEBOOKS_MODEL = "all-rulebooks";
     private static final String CHAT_COMPLETION_CHUNK = "chat.completion.chunk";
-    private static final int DEFAULT_TOP_K = 8;
-    private static final float DEFAULT_THRESHOLD = 0.3f;
 
     private final QueryUseCase queryUseCase;
     private final DocumentRepository documentRepository;
     private final ObjectMapper objectMapper;
+    private final RetrievalProperties retrieval;
 
     public OpenAiCompatibleController(QueryUseCase queryUseCase,
                                       DocumentRepository documentRepository,
-                                      ObjectMapper objectMapper) {
+                                      ObjectMapper objectMapper,
+                                      RetrievalProperties retrieval) {
         this.queryUseCase = queryUseCase;
         this.documentRepository = documentRepository;
         this.objectMapper = objectMapper;
+        this.retrieval = retrieval;
     }
 
     @Operation(summary = "List available models",
@@ -138,7 +140,7 @@ public class OpenAiCompatibleController {
                 .orElseThrow(() -> new IllegalArgumentException("A user message is required."));
 
         var rulebookId = ALL_RULEBOOKS_MODEL.equals(request.model()) ? null : request.model();
-        return new QueryRequest(userMessage.content(), rulebookId, DEFAULT_TOP_K, DEFAULT_THRESHOLD);
+        return new QueryRequest(userMessage.content(), rulebookId, retrieval.topK(), retrieval.similarityThreshold());
     }
 
     private void validateRequest(OpenAiChatCompletionRequest request) {
