@@ -94,6 +94,8 @@ The long-term target remains a multi-service architecture split into gateway, in
 | PostgreSQL     | 5432      | Document metadata and lifecycle state                 | PostgreSQL + Flyway |
 | Ollama         | 11434     | Local embeddings and chat generation                  | Ollama              |
 | Open WebUI     | 3000      | Optional local UI for interacting with Ollama         | Open WebUI          |
+| Prometheus     | 9090      | Scrapes `/actuator/prometheus` from the app           | Prometheus          |
+| Grafana        | 3001      | RAG dashboard (RPG Master AI / RAG Operations)        | Grafana             |
 
 ### Data Storage
 
@@ -331,7 +333,14 @@ docker-compose up -d
 # - Qdrant        → localhost:6333 (dashboard: localhost:6333/dashboard)
 # - PostgreSQL    → localhost:5432
 # - Open WebUI    → localhost:3000 (connected to local Ollama at localhost:11434)
+# - Prometheus    → localhost:9090 (scrapes the app on host:8082)
+# - Grafana       → localhost:3001 (anonymous Viewer; admin/admin to edit)
 ```
+
+The Grafana instance auto-provisions the Prometheus datasource and any JSON
+dashboards committed under `infra/observability/grafana/dashboards/`. After
+`docker-compose up -d`, open <http://localhost:3001> and navigate to the
+"RPG Master AI" folder.
 
 ### Running Tests
 
