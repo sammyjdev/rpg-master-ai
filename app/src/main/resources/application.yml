@@ -47,6 +47,15 @@ management:
   metrics:
     tags:
       service: ${spring.application.name}
+    # Enable Prometheus histogram buckets on our Timers so PromQL histogram_quantile
+    # can compute P50 / P95 / P99 in the Grafana dashboard (O3).
+    distribution:
+      percentiles-histogram:
+        rpg.query.latency: true
+        rpg.embedding.latency: true
+      slo:
+        rpg.query.latency: 1s,3s,5s,10s,15s,30s
+        rpg.embedding.latency: 100ms,500ms,1s,5s,30s
 
 # Spring Shell prompt
 spring.shell:
