@@ -12,6 +12,7 @@ import com.rpgmaster.app.application.port.LlmPort;
 import com.rpgmaster.app.application.port.VectorStorePort;
 import com.rpgmaster.app.observability.QueryAuditEvent;
 import com.rpgmaster.app.observability.QueryAuditLogger;
+import com.rpgmaster.app.observability.RagMetrics;
 import com.rpgmaster.domain.LlmResult;
 import com.rpgmaster.domain.QueryRequest;
 import com.rpgmaster.domain.QueryResult;
@@ -42,19 +43,22 @@ public class QueryUseCase {
     private final String ragSystemPrompt;
     private final String ragPromptVersion;
     private final QueryAuditLogger auditLogger;
+    private final RagMetrics metrics;
 
     public QueryUseCase(EmbeddingPort embeddingPort,
                         VectorStorePort vectorStorePort,
                         LlmPort llmPort,
                         @Qualifier("ragSystemPrompt") String ragSystemPrompt,
                         @Qualifier("ragPromptVersion") String ragPromptVersion,
-                        QueryAuditLogger auditLogger) {
+                        QueryAuditLogger auditLogger,
+                        RagMetrics metrics) {
         this.embeddingPort = embeddingPort;
         this.vectorStorePort = vectorStorePort;
         this.llmPort = llmPort;
         this.ragSystemPrompt = ragSystemPrompt;
         this.ragPromptVersion = ragPromptVersion;
         this.auditLogger = auditLogger;
+        this.metrics = metrics;
     }
 
     /**
@@ -81,6 +85,7 @@ public class QueryUseCase {
                     ragPromptVersion, request.rulebookId(), "blocking",
                     request.topK(), request.similarityThreshold(),
                     0, 0, 0, latencyMs));
+            metrics.recordQuery(request.rulebookId(), latencyMs, 0, 0);
             return new QueryResult("Not found in the rulebook.", List.of(), 0, latencyMs);
         }
 
@@ -93,6 +98,7 @@ public class QueryUseCase {
                 ragPromptVersion, request.rulebookId(), "blocking",
                 request.topK(), request.similarityThreshold(),
                 sources.size(), llmResult.promptTokens(), llmResult.completionTokens(), latencyMs));
+        metrics.recordQuery(request.rulebookId(), latencyMs, llmResult.promptTokens(), llmResult.completionTokens());
         return new QueryResult(llmResult.text(), sources, llmResult.tokensUsed(), latencyMs);
     }
 
@@ -111,18 +117,24 @@ public class QueryUseCase {
                 request.rulebookId(), queryVector, request.topK(), request.similarityThreshold()
         );
         if (sources.isEmpty()) {
+            var latencyMs = System.currentTimeMillis() - startMs;
             auditLogger.log(new QueryAuditEvent(
                     ragPromptVersion, request.rulebookId(), "stream",
                     request.topK(), request.similarityThreshold(),
-                    0, 0, 0, System.currentTimeMillis() - startMs));
+                    0, 0, 0, latencyMs));
+            metrics.recordQuery(request.rulebookId(), latencyMs, 0, 0);
             return Flux.just("Not found in the rulebook.");
         }
         var contextTexts = buildContextWithMetadata(sources);
         return llmPort.generateStream(ragSystemPrompt, request.question(), contextTexts)
-                .doOnTerminate(() -> auditLogger.log(new QueryAuditEvent(
-                        ragPromptVersion, request.rulebookId(), "stream",
-                        request.topK(), request.similarityThreshold(),
-                        sources.size(), 0, 0, System.currentTimeMillis() - startMs)));
+                .doOnTerminate(() -> {
+                    var latencyMs = System.currentTimeMillis() - startMs;
+                    auditLogger.log(new QueryAuditEvent(
+                            ragPromptVersion, request.rulebookId(), "stream",
+                            request.topK(), request.similarityThreshold(),
+                            sources.size(), 0, 0, latencyMs));
+                    metrics.recordQuery(request.rulebookId(), latencyMs, 0, 0);
+                });
     }
 
     private List<String> buildContextWithMetadata(List<SourceChunk> sources) {

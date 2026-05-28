@@ -7,6 +7,7 @@ import com.rpgmaster.app.application.port.DocumentStoragePort;
 import com.rpgmaster.app.application.port.EmbeddingPort;
 import com.rpgmaster.app.application.port.VectorStorePort;
 import com.rpgmaster.app.application.port.VectorStorePort.ChunkVector;
+import com.rpgmaster.app.observability.RagMetrics;
 import com.rpgmaster.domain.Chunk;
 import com.rpgmaster.domain.IngestionResult;
 import org.slf4j.Logger;
@@ -43,17 +44,20 @@ public class IngestionUseCase {
     private final EmbeddingPort embeddingPort;
     private final VectorStorePort vectorStorePort;
     private final DocumentRepository documentRepository;
+    private final RagMetrics metrics;
 
     public IngestionUseCase(DocumentStoragePort storagePort,
                             ChunkingPort chunkingPort,
                             EmbeddingPort embeddingPort,
                             VectorStorePort vectorStorePort,
-                            DocumentRepository documentRepository) {
+                            DocumentRepository documentRepository,
+                            RagMetrics metrics) {
         this.storagePort = storagePort;
         this.chunkingPort = chunkingPort;
         this.embeddingPort = embeddingPort;
         this.vectorStorePort = vectorStorePort;
         this.documentRepository = documentRepository;
+        this.metrics = metrics;
     }
 
     /**
@@ -88,12 +92,15 @@ public class IngestionUseCase {
 
             if (allChunks.isEmpty()) {
                 documentRepository.fail(documentId);
+                metrics.recordIngestion(rulebookId, 0, "failed");
                 return new IngestionResult.Failed(documentId, "No chunks produced from PDF", null);
             }
 
             // Step 3: Batch-embed all chunk texts
             var texts = allChunks.stream().map(Chunk::text).toList();
+            var embedStart = System.currentTimeMillis();
             var vectors = embeddingPort.embedBatch(texts);
+            metrics.recordEmbeddingLatency(System.currentTimeMillis() - embedStart, texts.size());
 
             // Step 4: Build ChunkVector list and upsert to Qdrant
             var chunkVectors = buildChunkVectors(allChunks, vectors);
@@ -103,11 +110,13 @@ public class IngestionUseCase {
             documentRepository.complete(documentId, allChunks.size());
 
             log.info("Ingestion complete: {} chunks stored for document={}", allChunks.size(), documentId);
+            metrics.recordIngestion(rulebookId, allChunks.size(), "success");
             return new IngestionResult.Success(documentId, allChunks.size());
 
         } catch (Exception e) {
             log.error("Ingestion failed for document={}: {}", documentId, e.getMessage(), e);
             documentRepository.fail(documentId);
+            metrics.recordIngestion(rulebookId, 0, "failed");
             return new IngestionResult.Failed(documentId, e.getMessage(), e);
         }
     }
