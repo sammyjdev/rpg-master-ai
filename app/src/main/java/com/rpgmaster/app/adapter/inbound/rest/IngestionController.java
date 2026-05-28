@@ -17,6 +17,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * REST adapter for triggering PDF ingestion while the API server is running.
@@ -49,14 +51,7 @@ public class IngestionController {
     @ApiResponse(responseCode = "200", description = "Ingestion result")
     @ApiResponse(responseCode = "400", description = "Invalid request or file not found")
     @PostMapping("/ingest")
-    public ResponseEntity<IngestionResponse> ingest(@RequestBody IngestionRequest request) {
-        if (request == null || request.path() == null || request.path().isBlank()) {
-            throw new IllegalArgumentException("path is required");
-        }
-        if (request.rulebookId() == null || request.rulebookId().isBlank()) {
-            throw new IllegalArgumentException("rulebookId is required");
-        }
-
+    public ResponseEntity<IngestionResponse> ingest(@Valid @RequestBody IngestionRequest request) {
         var pdfPath = Path.of(request.path());
         if (!pdfPath.toFile().exists()) {
             throw new IllegalArgumentException("File not found: " + request.path());
@@ -80,8 +75,10 @@ public class IngestionController {
 
     @Schema(description = "Ingestion request with local file path")
     public record IngestionRequest(
+            @NotBlank(message = "path is required")
             @Schema(description = "Absolute path to the PDF on the server filesystem", example = "C:/pdfs/phb.pdf")
             String path,
+            @NotBlank(message = "rulebookId is required")
             @Schema(description = "Rulebook identifier for namespace isolation", example = "dnd-5e-phb")
             String rulebookId) {}
 

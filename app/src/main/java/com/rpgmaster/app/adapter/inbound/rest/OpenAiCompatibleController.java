@@ -27,6 +27,9 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import reactor.core.publisher.Flux;
 
 @Tag(name = "Chat", description = "OpenAI-compatible chat completions and model listing")
@@ -73,8 +76,7 @@ public class OpenAiCompatibleController {
                  content = @Content(schema = @Schema(implementation = OpenAiChatCompletionResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request (missing model or messages)")
     @PostMapping(value = "/chat/completions", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> chatCompletions(@RequestBody OpenAiChatCompletionRequest request) {
-        validateRequest(request);
+    public ResponseEntity<?> chatCompletions(@Valid @RequestBody OpenAiChatCompletionRequest request) {
         if (Boolean.TRUE.equals(request.stream())) {
             return ResponseEntity.ok()
                     .contentType(MediaType.TEXT_EVENT_STREAM)
@@ -143,18 +145,6 @@ public class OpenAiCompatibleController {
         return new QueryRequest(userMessage.content(), rulebookId, retrieval.topK(), retrieval.similarityThreshold());
     }
 
-    private void validateRequest(OpenAiChatCompletionRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("Request body is required.");
-        }
-        if (request.model() == null || request.model().isBlank()) {
-            throw new IllegalArgumentException("Model is required.");
-        }
-        if (request.messages() == null || request.messages().isEmpty()) {
-            throw new IllegalArgumentException("At least one message is required.");
-        }
-    }
-
     private String completionId() {
         return "chatcmpl-" + UUID.randomUUID();
     }
@@ -175,8 +165,11 @@ public class OpenAiCompatibleController {
 
     @Schema(description = "OpenAI-compatible chat completion request")
     public record OpenAiChatCompletionRequest(
+            @NotBlank(message = "model is required")
             @Schema(description = "Rulebook ID to search, or 'all-rulebooks'", example = "dnd-5e-phb")
             String model,
+            @NotEmpty(message = "messages must contain at least one entry")
+            @Valid
             @Schema(description = "Conversation messages — last 'user' message is the question")
             List<OpenAiMessage> messages,
             @Schema(description = "If true, response is streamed as SSE events", example = "false")
@@ -185,8 +178,10 @@ public class OpenAiCompatibleController {
 
     @Schema(description = "A chat message with role and content")
     public record OpenAiMessage(
+            @NotBlank(message = "role is required")
             @Schema(description = "Message role", example = "user", allowableValues = {"system", "user", "assistant"})
             String role,
+            @NotBlank(message = "content is required")
             @Schema(description = "Message text", example = "What is the Fireball spell?")
             String content) {
     }
