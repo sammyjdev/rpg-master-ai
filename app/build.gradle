@@ -58,6 +58,9 @@ dependencies {
     testImplementation 'org.testcontainers:postgresql'
     testImplementation 'org.testcontainers:qdrant'
     testImplementation 'org.wiremock.integrations.testcontainers:wiremock-testcontainers-module:1.0-alpha-14'
+
+    // ArchUnit — enforces hexagonal boundary (see HexagonalBoundaryTest, ADR-004)
+    testImplementation 'com.tngtech.archunit:archunit-junit5:1.3.0'
 }
 
 // Separate source set for integration tests
