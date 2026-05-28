@@ -14,7 +14,16 @@
 
 Phase 1 complete and signed off. The RAG loop works end-to-end via Spring Shell CLI. A PDF rulebook can be ingested and queried with natural language questions answered by a local LLM.
 
-**Next up — Phase 2: Evaluation & Observability.** Prove the RAG works with numbers, not vibes — golden Q&A harness, prompt versioning, Prometheus + Grafana.
+**Phase 2 — Evaluation & Observability — in progress.**
+Observability half is shipped on branch `feat/phase-2-eval`:
+
+- Prompt versioning (`# version: vX.Y` header in every `.st` template) propagated to every query
+- Per-query JSON audit log on the dedicated `rpg.query.audit` logger
+- Micrometer meters for latency, token usage, cost (USD), ingestion throughput, embedding latency
+- Prometheus + Grafana via `docker-compose`; an 8-panel dashboard provisioned as code under `infra/observability/`
+- See [docs/observability.md](docs/observability.md) and [ADR-012](docs/adr/ADR-012-observability-contract.md)
+
+Eval harness (golden Q&A dataset, retrieval + answer metrics, baseline report) is the next deliverable.
 
 **Observed metrics (D&D 5e PHB):**
 
@@ -390,6 +399,7 @@ Key decisions with explicit trade-offs documented in [docs/adr/](docs/adr/):
 - [ADR-009](docs/adr/ADR-009-similarity-threshold-0.3.md): Similarity threshold 0.3
 - [ADR-010](docs/adr/ADR-010-virtual-threads-for-io.md): Virtual Threads for I/O bound AI calls
 - [ADR-011](docs/adr/ADR-011-no-lombok.md): No Lombok — Records only
+- [ADR-012](docs/adr/ADR-012-observability-contract.md): Observability contract — metric names, audit log shape, prompt versioning
 
 ---
 
