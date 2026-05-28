@@ -54,3 +54,6 @@ logging:
     com.rpgmaster: INFO
     org.springframework.ai: INFO
     io.qdrant: WARN
+    # One structured JSON line per RAG query — see QueryAuditLogger.
+    # Lower to WARN in test profiles or pipe to a separate appender in prod.
+    rpg.query.audit: INFO

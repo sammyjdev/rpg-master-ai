@@ -49,10 +49,12 @@ public class SpringAiLlmAdapter implements LlmPort {
         var text = response.getResult().getOutput().getText();
 
         var usage = response.getMetadata().getUsage();
-        var tokensUsed = usage != null ? (int) usage.getTotalTokens() : 0;
+        var promptTokens = usage != null ? (int) usage.getPromptTokens() : 0;
+        var completionTokens = usage != null ? (int) usage.getCompletionTokens() : 0;
 
-        log.debug("LLM response: {} tokens used", tokensUsed);
-        return new LlmResult(text, tokensUsed);
+        log.debug("LLM response: prompt={}, completion={}, total={}",
+                promptTokens, completionTokens, promptTokens + completionTokens);
+        return new LlmResult(text, promptTokens, completionTokens);
     }
 
     /** {@inheritDoc} */
