@@ -1,9 +1,11 @@
 package com.rpgmaster.app.adapter.inbound.rest;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.rpgmaster.app.application.IngestionUseCase;
+import com.rpgmaster.app.config.IngestionProperties;
 import com.rpgmaster.domain.IngestionResult;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,14 +32,25 @@ import jakarta.validation.constraints.NotBlank;
 @Tag(name = "Ingestion", description = "PDF rulebook ingestion (local dev only)")
 @RestController
 @RequestMapping("/v1")
+@Profile("local")
 public class IngestionController {
 
     private static final Logger log = LoggerFactory.getLogger(IngestionController.class);
 
     private final IngestionUseCase ingestionUseCase;
+    private final List<Path> allowedRoots;
 
-    public IngestionController(IngestionUseCase ingestionUseCase) {
+    public IngestionController(IngestionUseCase ingestionUseCase, IngestionProperties properties) {
         this.ingestionUseCase = ingestionUseCase;
+        this.allowedRoots = properties.allowedRoots().stream()
+                .map(root -> Path.of(root).toAbsolutePath().normalize())
+                .toList();
+        if (this.allowedRoots.isEmpty()) {
+            log.warn("rpg.ingestion.allowed-roots is empty — /v1/ingest will reject every request. "
+                    + "Configure at least one root in application-local.yml.");
+        } else {
+            log.info("Ingestion path allowlist: {}", this.allowedRoots);
+        }
     }
 
     /**
@@ -52,12 +66,18 @@ public class IngestionController {
     @ApiResponse(responseCode = "400", description = "Invalid request or file not found")
     @PostMapping("/ingest")
     public ResponseEntity<IngestionResponse> ingest(@Valid @RequestBody IngestionRequest request) {
-        var pdfPath = Path.of(request.path());
+        var pdfPath = Path.of(request.path()).toAbsolutePath().normalize();
+
+        if (!isUnderAllowedRoot(pdfPath)) {
+            log.warn("Rejected ingestion path outside allowlist: {}", pdfPath);
+            throw new IllegalArgumentException(
+                    "Path is not under any configured rpg.ingestion.allowed-roots entry");
+        }
         if (!pdfPath.toFile().exists()) {
             throw new IllegalArgumentException("File not found: " + request.path());
         }
 
-        log.info("REST ingest triggered: path={}, rulebook={}", request.path(), request.rulebookId());
+        log.info("REST ingest triggered: path={}, rulebook={}", pdfPath, request.rulebookId());
         var result = ingestionUseCase.ingest(pdfPath, request.rulebookId());
 
         var response = switch (result) {
@@ -71,6 +91,15 @@ public class IngestionController {
         };
 
         return ResponseEntity.ok(response);
+    }
+
+    private boolean isUnderAllowedRoot(Path candidate) {
+        for (Path root : allowedRoots) {
+            if (candidate.startsWith(root)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Schema(description = "Ingestion request with local file path")

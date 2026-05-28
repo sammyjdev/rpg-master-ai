@@ -18,3 +18,7 @@ Organize the system around ports and adapters, keeping the application layer ind
 - Infrastructure changes are localized to adapters.
 - More interfaces and indirection are introduced up front.
 - The repository becomes easier to review from an architecture perspective.
+- The boundary is enforced by `HexagonalBoundaryTest` (ArchUnit, app module): the
+  application layer is statically checked to never depend on `org.springframework.ai`,
+  `io.qdrant`, `org.apache.pdfbox`, `org.springframework.data.jpa` or
+  `jakarta.persistence`. Violations fail the build instead of being caught in review.
