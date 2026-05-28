@@ -18,6 +18,13 @@ spring:
           temperature: 0.1
           num-ctx: 8192
 
+rpg:
+  ingestion:
+    # Dev-only /v1/ingest path allowlist. See ADR-013.
+    # Any request path that does not resolve under one of these roots is rejected.
+    allowed-roots:
+      - ${user.home}/rpg-corpus
+
 logging:
   level:
     com.rpgmaster: DEBUG
