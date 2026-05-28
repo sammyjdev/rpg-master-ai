@@ -28,13 +28,19 @@ rpg:
   retrieval:
     top-k: 8
     similarity-threshold: 0.3
+  # Cost model used by rpg.query.cost_usd counter.
+  # Defaults to 0 (local Ollama is free); override per-profile when targeting paid providers.
+  metrics:
+    cost:
+      prompt-usd-per-1k: 0.0
+      completion-usd-per-1k: 0.0
 
 # Actuator endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
