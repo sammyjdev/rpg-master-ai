@@ -33,8 +33,10 @@ dependencies {
     implementation 'io.grpc:grpc-netty-shaded:1.65.1'
     implementation 'com.google.protobuf:protobuf-java:3.25.5'
 
-    // OpenAPI / Swagger UI
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+    // OpenAPI / Swagger UI — webflux variant to match the reactive app, pinned to the
+    // springdoc line compatible with Spring Boot 3.3.x (2.7.x targets Boot 3.4 / Spring 6.2
+    // and references LiteWebJarsResourceResolver, which does not exist on 3.3.5).
+    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.6.0'
 
     // PDF parsing
     implementation 'org.apache.pdfbox:pdfbox:3.0.3'
