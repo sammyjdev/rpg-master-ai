@@ -7,6 +7,7 @@ plugins {
 dependencyManagement {
     imports {
         mavenBom "org.springframework.ai:spring-ai-bom:1.0.0"
+        mavenBom "dev.langchain4j:langchain4j-bom:1.0.0"
     }
 }
 
@@ -28,17 +29,19 @@ dependencies {
     implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
 
     // Qdrant vector store
-    implementation 'io.qdrant:client:1.12.0'
+    implementation 'io.qdrant:client:1.13.0'
     // gRPC + protobuf required at compile time (Qdrant client uses implementation scope)
     implementation 'io.grpc:grpc-protobuf:1.65.1'
     implementation 'io.grpc:grpc-stub:1.65.1'
     implementation 'io.grpc:grpc-netty-shaded:1.65.1'
     implementation 'com.google.protobuf:protobuf-java:3.25.5'
 
-    // OpenAPI / Swagger UI — webflux variant to match the reactive app, pinned to the
-    // springdoc line compatible with Spring Boot 3.3.x (2.7.x targets Boot 3.4 / Spring 6.2
-    // and references LiteWebJarsResourceResolver, which does not exist on 3.3.5).
-    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.6.0'
+    // LangChain4j — parallel retrieval path (evaluated alongside Spring AI; see ADR-012)
+    implementation 'dev.langchain4j:langchain4j-ollama'
+    implementation 'dev.langchain4j:langchain4j-qdrant'
+
+    // OpenAPI / Swagger UI
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
     // PDF parsing
     implementation 'org.apache.pdfbox:pdfbox:3.0.3'
