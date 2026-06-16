@@ -15,6 +15,7 @@ spring:
 qdrant:
   host: ${QDRANT_HOST:localhost}
   port: ${QDRANT_GRPC_PORT:6334}
+  collection: rpg-chunks
 
 logging:
   level:

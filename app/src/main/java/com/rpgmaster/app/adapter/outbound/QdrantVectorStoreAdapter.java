@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.rpgmaster.app.application.port.VectorStorePort;
+import com.rpgmaster.app.config.QdrantProperties;
 import com.rpgmaster.domain.SourceChunk;
 
 import static io.qdrant.client.ConditionFactory.matchKeyword;
@@ -23,7 +24,8 @@ import io.qdrant.client.grpc.Points.PointStruct;
 
 /**
  * Vector store adapter backed by Qdrant.
- * Collection: {@code rpg-chunks}, vector size: 1024 (bge-m3).
+ * Collection name is driven by {@link QdrantProperties#collection()}.
+ * Vector size: 1024 (bge-m3).
  *
  * <p>Upsert is idempotent — same {@code chunkId} overwrites the existing point.
  * Always filters by {@code rulebook_id} to prevent cross-rulebook contamination.
@@ -32,13 +34,14 @@ import io.qdrant.client.grpc.Points.PointStruct;
 public class QdrantVectorStoreAdapter implements VectorStorePort {
 
     private static final Logger log = LoggerFactory.getLogger(QdrantVectorStoreAdapter.class);
-    private static final String COLLECTION = "rpg-chunks";
     private static final String RULEBOOK_ID_FIELD = "rulebook_id";
 
     private final QdrantClient qdrantClient;
+    private final String collection;
 
-    public QdrantVectorStoreAdapter(QdrantClient qdrantClient) {
+    public QdrantVectorStoreAdapter(QdrantClient qdrantClient, QdrantProperties props) {
         this.qdrantClient = qdrantClient;
+        this.collection = props.collection();
     }
 
     /** {@inheritDoc} */
@@ -51,7 +54,7 @@ public class QdrantVectorStoreAdapter implements VectorStorePort {
                 .toList();
 
         try {
-            var result = qdrantClient.upsertAsync(COLLECTION, points).get();
+            var result = qdrantClient.upsertAsync(collection, points).get();
             log.info("Upserted {} points to Qdrant, status={}", points.size(), result.getStatus());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -66,7 +69,7 @@ public class QdrantVectorStoreAdapter implements VectorStorePort {
     public List<SourceChunk> search(String rulebookId, List<Float> queryVector, int topK, float threshold) {
         try {
             var searchBuilder = Points.SearchPoints.newBuilder()
-                    .setCollectionName(COLLECTION)
+                    .setCollectionName(collection)
                     .addAllVector(queryVector)
                     .setLimit(topK)
                     .setScoreThreshold(threshold)
