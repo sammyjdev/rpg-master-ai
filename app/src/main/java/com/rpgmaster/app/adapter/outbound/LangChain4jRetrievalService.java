@@ -20,7 +20,7 @@ import dev.langchain4j.store.embedding.filter.Filter;
 import dev.langchain4j.store.embedding.filter.comparison.IsEqualTo;
 
 /**
- * Alternative retrieval path backed by LangChain4j (see ADR-012).
+ * Alternative retrieval path backed by LangChain4j (see ADR-014).
  * Spring AI remains primary; this is for comparison only and is never wired
  * into {@code QueryUseCase}.
  */

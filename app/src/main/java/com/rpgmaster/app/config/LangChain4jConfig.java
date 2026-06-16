@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import java.time.Duration;
 
 /**
- * LangChain4j beans for the alternative retrieval path (ADR-012).
+ * LangChain4j beans for the alternative retrieval path (ADR-014).
  * Reuses the SAME Ollama instance + bge-m3 model + Qdrant collection as the
  * primary Spring AI path — config is read from existing keys, not duplicated.
  */
