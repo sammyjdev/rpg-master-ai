@@ -12,7 +12,7 @@ import java.util.List;
  * <p>Implementations:
  * <ul>
  *   <li>{@code SpringAiRetrievalService} — primary; composes EmbeddingPort + VectorStorePort.</li>
- *   <li>{@code LangChain4jRetrievalService} — alternative under evaluation (see ADR-012).</li>
+ *   <li>{@code LangChain4jRetrievalService} — alternative under evaluation (see ADR-014).</li>
  * </ul>
  */
 public interface RetrievalPort {
