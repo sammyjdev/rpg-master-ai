@@ -41,7 +41,7 @@ dependencies {
     implementation 'dev.langchain4j:langchain4j-qdrant'
 
     // OpenAPI / Swagger UI
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 
     // PDF parsing
     implementation 'org.apache.pdfbox:pdfbox:3.0.3'
@@ -103,6 +103,15 @@ tasks.register('integrationTest', Test) {
     if (dockerHost) {
         systemProperty 'DOCKER_HOST', dockerHost
         environment 'DOCKER_HOST', dockerHost
+    }
+
+    // Pin the Docker API version when set, so the Testcontainers docker-java client
+    // talks to newer Docker Engines (e.g. Docker Desktop 29+, MinAPIVersion 1.44) whose
+    // minimum API version is above docker-java's default. Forwarded to the forked worker.
+    def dockerApiVersion = System.getenv('DOCKER_API_VERSION') ?: System.getProperty('DOCKER_API_VERSION')
+    if (dockerApiVersion) {
+        systemProperty 'api.version', dockerApiVersion
+        environment 'DOCKER_API_VERSION', dockerApiVersion
     }
 }
 
