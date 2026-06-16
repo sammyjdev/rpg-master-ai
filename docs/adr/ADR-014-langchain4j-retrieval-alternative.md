@@ -1,4 +1,4 @@
-# ADR-012: LangChain4j As A Parallel Retrieval Alternative
+# ADR-014: LangChain4j As A Parallel Retrieval Alternative
 
 ## Status
 
