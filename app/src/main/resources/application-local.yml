@@ -29,3 +29,8 @@ logging:
   level:
     com.rpgmaster: DEBUG
     org.springframework.ai.ollama: DEBUG
+
+qdrant:
+  host: localhost
+  port: 6334
+  collection: rpg-chunks
