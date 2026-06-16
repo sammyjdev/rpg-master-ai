@@ -80,6 +80,14 @@ tasks.register('integrationTest', Test) {
     jvmArgs '-XX:+EnableDynamicAgentLoading'
     shouldRunAfter test
 
+    // Surface full failure causes (Spring context load errors, missing classes) in CI logs.
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat = 'full'
+        showCauses = true
+        showStackTraces = true
+    }
+
     // Allow explicit override for Docker endpoint when needed.
     def dockerHost = System.getenv('DOCKER_HOST') ?: System.getProperty('DOCKER_HOST')
     if (dockerHost) {
