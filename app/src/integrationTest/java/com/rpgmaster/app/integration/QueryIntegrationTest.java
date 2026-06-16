@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +18,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.qdrant.QdrantContainer;
 
 import com.rpgmaster.app.application.QueryUseCase;
+import com.rpgmaster.app.application.port.EmbeddingPort;
 import com.rpgmaster.app.application.port.VectorStorePort;
 import com.rpgmaster.domain.QueryRequest;
 
@@ -64,22 +64,8 @@ class QueryIntegrationTest {
     @Autowired
     private VectorStorePort vectorStorePort;
 
-    @BeforeEach
-    @SuppressWarnings("unused")
-    void seedChunks() {
-        // Pre-load a known vector for "dnd-5e-phb" rulebook
-        // This synthetic vector will be found when queried with a near-zero vector and low threshold
-        var syntheticVector = buildSyntheticVector(1024, 0.01f);
-        var chunk = new VectorStorePort.ChunkVector(
-                UUID.randomUUID().toString(),
-                UUID.randomUUID().toString(),
-                DND_RULEBOOK_ID,
-                "A fireball is a 3rd-level evocation spell that deals 8d6 fire damage.",
-                1,
-                syntheticVector
-        );
-        vectorStorePort.upsert(List.of(chunk));
-    }
+    @Autowired
+    private EmbeddingPort embeddingPort;
 
     @Test
     @DisplayName("Query returns a result with sources from the correct rulebook")
@@ -87,6 +73,19 @@ class QueryIntegrationTest {
         // Ollama must be reachable for this test (or stub it via WireMock in a future iteration)
         org.junit.jupiter.api.Assumptions.assumeTrue(isOllamaReachable(),
                 "Skipping: Ollama is not reachable. Start Docker Compose to run this test.");
+
+        // Seed a chunk embedded with the real model so a semantic query actually retrieves it
+        // at the production similarity threshold (a uniform synthetic vector would not match).
+        var chunkText = "A fireball is a 3rd-level evocation spell that deals 8d6 fire damage in a 20-foot radius.";
+        var chunk = new VectorStorePort.ChunkVector(
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
+                DND_RULEBOOK_ID,
+                chunkText,
+                1,
+                embeddingPort.embed(chunkText)
+        );
+        vectorStorePort.upsert(List.of(chunk));
 
         var request = new QueryRequest("What is a Fireball spell?", DND_RULEBOOK_ID);
         var result = queryUseCase.query(request);
