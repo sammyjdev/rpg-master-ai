@@ -3,6 +3,8 @@
 > Snapshot of where the `feat/phase-2-eval` branch stands so the next session
 > (yours or a fresh agent's) can resume without re-reading the whole chat.
 > Living document — update before stopping work, delete when Phase 2 merges.
+>
+> **Status (2026-06-17):** the observability half, the hardening work (ArchUnit boundary test, `/v1/ingest` allowlist + ADR-013), and the LangChain4j retrieval path (ADR-014) are now **merged to `master`** (the `feat/phase-2-eval` branch is gone). The eval half (golden Q&A dataset, #8) remains the open Phase 2 item.
 
 ## TL;DR
 
