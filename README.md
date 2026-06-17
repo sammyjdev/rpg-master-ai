@@ -329,10 +329,11 @@ docker-compose up -d
 ./rpgm start
 
 # Ingest a rulebook PDF
-./rpgm ingest pdfs/phb.pdf dnd-5e-phb
+# PDFs must live under the ingest allowlist root (~/rpg-corpus by default; see ADR-013).
+./rpgm ingest ~/rpg-corpus/phb.pdf dnd-5e-phb
 
 # Query
-./rpgm query "What is the Fireball spell and what damage does it deal?" dnd-5e-phb
+./rpgm ask "What is the Fireball spell and what damage does it deal?"
 ```
 
 ### Docker Compose Services
