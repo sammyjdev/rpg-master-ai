@@ -131,7 +131,8 @@ cmd_ingest() {
 
     if [[ -z "$pdf_path" || -z "$rulebook_id" ]]; then
         echo "Usage: ./rpgm ingest <path-to-pdf> <rulebook-id>"
-        echo "Example: ./rpgm ingest pdfs/phb.pdf dnd-5e-phb"
+        echo "Example: ./rpgm ingest ~/rpg-corpus/phb.pdf dnd-5e-phb"
+        echo "Note: PDFs must live under the ingest allowlist root (~/rpg-corpus; see ADR-013)."
         return 1
     fi
 
@@ -167,9 +168,10 @@ cmd_ingest() {
 
 cmd_ingest_all() {
     echo "📚 Re-ingesting all rulebooks..."
-    cmd_ingest pdfs/phb.pdf dnd-5e-phb
-    cmd_ingest pdfs/dmg.pdf dnd-5e-dmg
-    cmd_ingest pdfs/mm.pdf dnd-5e-mm
+    local corpus="${RPGM_CORPUS_DIR:-$HOME/rpg-corpus}"
+    cmd_ingest "$corpus/phb.pdf" dnd-5e-phb
+    cmd_ingest "$corpus/dmg.pdf" dnd-5e-dmg
+    cmd_ingest "$corpus/mm.pdf" dnd-5e-mm
     echo "✅ All rulebooks ingested"
 }
 
@@ -208,8 +210,8 @@ Commands:
   restart   Stop + start
   status    Show infrastructure and app health
   logs      Tail application logs
-  ingest <pdf> <id>  Ingest a PDF (e.g., ./rpgm ingest pdfs/phb.pdf dnd-5e-phb)
-  ingest-all        Re-ingest all PDFs from pdfs/ folder
+  ingest <pdf> <id>  Ingest a PDF (e.g., ./rpgm ingest ~/rpg-corpus/phb.pdf dnd-5e-phb)
+  ingest-all        Re-ingest phb/dmg/mm from ~/rpg-corpus (override with RPGM_CORPUS_DIR)
   ask <Q>   Quick query (e.g., ./rpgm ask What is Fireball?)
   help      Show this help
 
