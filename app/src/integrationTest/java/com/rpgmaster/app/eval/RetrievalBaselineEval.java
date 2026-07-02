@@ -22,7 +22,7 @@ import com.rpgmaster.domain.SourceChunk;
  * Writes eval/reports/retrieval-<millis>.md.
  */
 @SpringBootTest
-@ActiveProfiles("eval")
+@ActiveProfiles({"local", "eval"})
 class RetrievalBaselineEval {
 
     private static final int[] K_SWEEP = {3, 5, 8, 10};
