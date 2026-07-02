@@ -22,12 +22,15 @@ import org.springframework.web.client.RestClient;
  * Verifies the reranker against a REAL TEI container serving bge-reranker-v2-m3.
  * Slow on first run (model download ~2GB); integration tier only, not CI-critical.
  * Run: ./gradlew :app:integrationTest --tests '*TeiRerankIntegrationTest' (requires Docker)
+ *
+ * <p>Pinned to {@code cpu-1.2}: {@code cpu-1.5}/{@code cpu-1.7} segfault loading the Candle
+ * CPU backend under Colima's Rosetta amd64 emulation on Apple Silicon; {@code cpu-1.2} does not.
  */
 @Testcontainers(disabledWithoutDocker = true)
 class TeiRerankIntegrationTest {
 
     @Container
-    static GenericContainer<?> tei = new GenericContainer<>("ghcr.io/huggingface/text-embeddings-inference:cpu-1.5")
+    static GenericContainer<?> tei = new GenericContainer<>("ghcr.io/huggingface/text-embeddings-inference:cpu-1.2")
             .withCommand("--model-id", "BAAI/bge-reranker-v2-m3")
             .withExposedPorts(80)
             .waitingFor(Wait.forHttp("/health").forPort(80).withStartupTimeout(Duration.ofMinutes(10)));
