@@ -7,9 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import com.rpgmaster.app.application.port.EmbeddingPort;
 import com.rpgmaster.app.application.port.LlmPort;
-import com.rpgmaster.app.application.port.VectorStorePort;
 import com.rpgmaster.app.observability.QueryAuditEvent;
 import com.rpgmaster.app.observability.QueryAuditLogger;
 import com.rpgmaster.app.observability.RagMetrics;
@@ -37,23 +35,20 @@ public class QueryUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(QueryUseCase.class);
 
-    private final EmbeddingPort embeddingPort;
-    private final VectorStorePort vectorStorePort;
+    private final RetrievalService retrievalService;
     private final LlmPort llmPort;
     private final String ragSystemPrompt;
     private final String ragPromptVersion;
     private final QueryAuditLogger auditLogger;
     private final RagMetrics metrics;
 
-    public QueryUseCase(EmbeddingPort embeddingPort,
-                        VectorStorePort vectorStorePort,
+    public QueryUseCase(RetrievalService retrievalService,
                         LlmPort llmPort,
                         @Qualifier("ragSystemPrompt") String ragSystemPrompt,
                         @Qualifier("ragPromptVersion") String ragPromptVersion,
                         QueryAuditLogger auditLogger,
                         RagMetrics metrics) {
-        this.embeddingPort = embeddingPort;
-        this.vectorStorePort = vectorStorePort;
+        this.retrievalService = retrievalService;
         this.llmPort = llmPort;
         this.ragSystemPrompt = ragSystemPrompt;
         this.ragPromptVersion = ragPromptVersion;
@@ -73,9 +68,8 @@ public class QueryUseCase {
 
         log.info("Query: '{}', rulebook={}, topK={}", request.question(), request.rulebookId(), request.topK());
 
-        var queryVector = embeddingPort.embed(request.question());
-        var sources = vectorStorePort.search(
-                request.rulebookId(), queryVector, request.topK(), request.similarityThreshold()
+        var sources = retrievalService.retrieve(
+                request.rulebookId(), request.question(), request.similarityThreshold(), request.topK()
         );
         log.info("Retrieved {} chunks from Qdrant", sources.size());
 
@@ -112,9 +106,8 @@ public class QueryUseCase {
      */
     public Flux<String> queryStream(QueryRequest request) {
         var startMs = System.currentTimeMillis();
-        var queryVector = embeddingPort.embed(request.question());
-        var sources = vectorStorePort.search(
-                request.rulebookId(), queryVector, request.topK(), request.similarityThreshold()
+        var sources = retrievalService.retrieve(
+                request.rulebookId(), request.question(), request.similarityThreshold(), request.topK()
         );
         if (sources.isEmpty()) {
             var latencyMs = System.currentTimeMillis() - startMs;
