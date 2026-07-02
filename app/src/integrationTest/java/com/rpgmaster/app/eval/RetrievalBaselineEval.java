@@ -21,7 +21,7 @@ import com.rpgmaster.domain.SourceChunk;
  *   ./gradlew :app:eval
  * Writes eval/reports/retrieval-<millis>.md.
  */
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles({"local", "eval"})
 class RetrievalBaselineEval {
 
