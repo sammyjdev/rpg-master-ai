@@ -158,3 +158,30 @@ The two independent judges agree (overlapping CIs, context_precision ≈ 0.81–
 the robustness signal that makes a local judge credible for the rerank comparison.
 Absolute values are on a chunk-anchored synthetic set, so they matter for relative
 before/after-rerank movement, not as absolute production precision.
+
+### Track B: rerank ON (Slice 3, 2026-07-02)
+
+Same method as above (`gnomon_batch_two_judges.py`, generate-once with
+`llama3.2:3b`, judge-twice, 8 runs, seed 42, n=45), rerun with `RPG_RERANK_ENABLED=true`
+(`app` booted via `RPG_RERANK_ENABLED=true SPRING_AI_OLLAMA_CHAT_MODEL=llama3.2:3b
+SPRING_PROFILES_ACTIVE=local,api ./gradlew :app:bootRun`, reranker = the native
+arm64 stand-in from Track A, `rpg.rerank.top-n=30` default).
+
+| judge model  | context_precision (OFF) | context_precision (ON) | 95% CI (ON)    | Δ      |
+|--------------|--------------------------|-------------------------|-----------------|--------|
+| llama3.1:8b  | 0.810                    | 0.844                   | 0.829 – 0.859   | +0.034 |
+| gemma4:e4b   | 0.843                    | 0.889                   | 0.818 – 0.947   | +0.046 |
+
+Both judges move in the same direction: **rerank-ON improves context_precision**.
+llama's CI barely overlaps the OFF-run CI (OFF upper bound 0.836 vs. ON lower
+bound 0.829) — a real, if modest, shift. gemma's CI is wider and overlaps the
+OFF-run CI substantially (OFF: 0.764–0.907), so its movement is directionally
+consistent but statistically less sharp than llama's on this snapshot. Neither
+judge shows a regression. This is consistent with Track A's finding (rerank
+trades a small amount of chunk-level recall for better rank/relevance quality)
+and is the primary success signal the plan set out to measure: **rerank-on
+beats both Slice-2 baselines (0.810 llama / 0.843 gemma)**.
+
+Same caveats as Track A rerank-on apply: measured against the native
+arm64 reranker stand-in, not real TEI at this scale (see Track A above); a
+non-CI, non-reproducible-on-demand snapshot (depends on the GPU desktop).
