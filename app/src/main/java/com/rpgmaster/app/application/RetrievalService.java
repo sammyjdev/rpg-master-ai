@@ -8,7 +8,6 @@ import com.rpgmaster.app.application.port.EmbeddingPort;
 import com.rpgmaster.app.application.port.RerankPort;
 import com.rpgmaster.app.application.port.VectorStorePort;
 import com.rpgmaster.app.config.RerankProperties;
-import com.rpgmaster.app.config.RetrievalProperties;
 import com.rpgmaster.domain.SourceChunk;
 
 /**
@@ -24,18 +23,15 @@ public class RetrievalService {
     private final EmbeddingPort embeddingPort;
     private final VectorStorePort vectorStorePort;
     private final RerankPort rerankPort;
-    private final RetrievalProperties retrieval;
     private final RerankProperties rerank;
 
     public RetrievalService(EmbeddingPort embeddingPort,
                             VectorStorePort vectorStorePort,
                             RerankPort rerankPort,
-                            RetrievalProperties retrieval,
                             RerankProperties rerank) {
         this.embeddingPort = embeddingPort;
         this.vectorStorePort = vectorStorePort;
         this.rerankPort = rerankPort;
-        this.retrieval = retrieval;
         this.rerank = rerank;
     }
 

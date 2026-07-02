@@ -9,7 +9,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * @param enabled whether reranking runs (off reproduces the vector-only baseline)
  * @param topN    candidates fetched before reranking (should be >= retrieval top-k)
- * @param model   reranker model id served by TEI
+ * @param model   reranker model id served by TEI; documentation-only — the app never
+ *                reads this value, the actual model is selected by the TEI container's
+ *                {@code --model-id} launch argument, so keep the two in sync manually
  * @param baseUrl TEI base URL (no trailing path)
  */
 @ConfigurationProperties(prefix = "rpg.rerank")
