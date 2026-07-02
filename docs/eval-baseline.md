@@ -19,34 +19,34 @@ embedding.
 
 ## Retrieval (deterministic, `./gradlew :app:eval`)
 
-Golden set: 3 cases (Ankheg → mm p20, Fireball → phb p222, "bola de fogo" → phb p222).
-Similarity threshold: 0.3.
+Golden set: 45 cases (3 hand-picked seeds + 42 synthetic PT, chunk-anchored — 16
+dnd-5e-phb, 15 dnd-5e-mm, 14 dnd-5e-dmg). Similarity threshold: 0.3.
 
 | k  | mean recall@k | mean MRR |
 |----|---------------|----------|
-| 3  | 1.000         | 0.778    |
-| 5  | 1.000         | 0.778    |
-| 8  | 1.000         | 0.778    |
-| 10 | 1.000         | 0.778    |
+| 3  | 1.000         | 0.948    |
+| 5  | 1.000         | 0.948    |
+| 8  | 1.000         | 0.948    |
+| 10 | 1.000         | 0.948    |
 
-Recommended `k` for this corpus: **cannot be concluded yet** — recall saturates at
-k=3 and MRR is flat across the sweep, so the current production default of 8 buys no
-extra recall on this set, but N=3 is far too small to change the default. Revisit
-after the golden set is expanded (see Caveats).
+Cases are chunk-derived (synthetic), so recall is inflated in absolute terms; the
+number is for relative before/after-rerank comparison, where the inflation cancels —
+not absolute production recall.
+
+Recommended `k` for this corpus: recall and MRR are both flat across k=3..10 at
+N=45, so the current production default of 8 buys nothing on this set — **k=3 is
+sufficient for recall on this golden set**, though this is still a synthetic-set
+result (see Caveats) and should be revisited once a non-synthetic eval set exists.
 
 ## Slice 2 target
 
-This is the number reranking must beat. recall@k is already 1.0 on this tiny set, so
-the meaningful lever is **MRR (0.778 → aim for 1.0)**: the relevant page is retrieved
+This is the number reranking must beat. recall@k is already 1.0 on this set, so
+the meaningful lever is **MRR (0.948 → aim for 1.0)**: the relevant page is retrieved
 but not always at rank 1. A cross-encoder reranker (Slice 2) should push the relevant
 page to rank 1, raising MRR without needing more recall.
 
 ## Caveats (read before trusting these numbers)
 
-- **N=3, not statistical.** This is a smoke-scale baseline that validates the
-  pipeline end-to-end (ingest → embed → Qdrant → recall@k/MRR → report), not a
-  representative measurement. Expanding to ~20-30 cases (T6) is required before any
-  real conclusion about k, threshold, or reranking gain.
 - **`recall@k` counts retrieved chunk slots, not distinct pages.** A page occupying
   multiple of the top-k chunks consumes multiple slots. This matches the metric's
   spec and is apples-to-apples for the Slice-2 comparison, but "recall@3" is not
