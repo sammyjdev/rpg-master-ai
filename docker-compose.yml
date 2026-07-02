@@ -58,7 +58,11 @@ services:
     restart: unless-stopped
 
   tei-reranker:
-    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
+    # cpu-1.5/1.7 segfault (SIGSEGV) loading the Candle CPU backend under Colima's Rosetta
+    # amd64 emulation on Apple Silicon; cpu-1.2 does not. Verified via manual /rerank call.
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.2
+    # HF TEI publishes amd64-only images; force emulation via Colima Rosetta on Apple Silicon.
+    platform: linux/amd64
     command: ['--model-id', 'BAAI/bge-reranker-v2-m3']
     ports:
       - '8090:80'
