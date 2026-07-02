@@ -32,6 +32,8 @@ rpg:
   rerank:
     enabled: false
     top-n: 30
+    # Documentation-only: the app never reads this. Keep in sync with the TEI
+    # container's --model-id launch argument, which actually selects the model.
     model: BAAI/bge-reranker-v2-m3
     base-url: http://localhost:8090
   # Cost model used by rpg.query.cost_usd counter.

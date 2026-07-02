@@ -19,7 +19,6 @@ import com.rpgmaster.app.application.port.EmbeddingPort;
 import com.rpgmaster.app.application.port.RerankPort;
 import com.rpgmaster.app.application.port.VectorStorePort;
 import com.rpgmaster.app.config.RerankProperties;
-import com.rpgmaster.app.config.RetrievalProperties;
 import com.rpgmaster.domain.SourceChunk;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,9 +33,8 @@ class RetrievalServiceTest {
     }
 
     private RetrievalService service(boolean rerankEnabled) {
-        var retrieval = new RetrievalProperties(8, 0.3f);
         var rerank = new RerankProperties(rerankEnabled, 30, "m", "http://tei");
-        return new RetrievalService(embeddingPort, vectorStorePort, rerankPort, retrieval, rerank);
+        return new RetrievalService(embeddingPort, vectorStorePort, rerankPort, rerank);
     }
 
     @Test
