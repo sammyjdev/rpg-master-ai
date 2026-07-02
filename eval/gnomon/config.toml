@@ -26,11 +26,8 @@ contexts_field = "contexts"
 
 [judge]
 provider = "ollama"
-# Reuses RPG_MASTER's own local chat model (application-local.yml) so no
-# extra pull is needed for this first wiring. Swap for a stronger/different
-# model later to avoid same-model self-preference bias.
-model = "qwen2.5:7b"
-base_url = "http://localhost:11434"
+model = "llama3.1:8b"
+base_url = "http://100.78.123.92:11434"
 
 [gate]
 # Record-only on this first wiring — no build should fail on these yet.
