@@ -124,6 +124,12 @@ tasks.register('eval', Test) {
     jvmArgs '-XX:+EnableDynamicAgentLoading'
     filter { includeTestsMatching 'com.rpgmaster.app.eval.RetrievalBaselineEval' }
     outputs.upToDateWhen { false }   // always re-run; it records fresh numbers
+    if (project.hasProperty('rerank')) {
+        systemProperty 'rpg.rerank.enabled', 'true'
+        if (project.hasProperty('topN')) {
+            systemProperty 'rpg.rerank.top-n', project.property('topN')
+        }
+    }
 }
 
 bootJar {

@@ -33,6 +33,32 @@ Cases are chunk-derived (synthetic), so recall is inflated in absolute terms; th
 number is for relative before/after-rerank comparison, where the inflation cancels —
 not absolute production recall.
 
+### Track A: rerank on vs off (Slice 3, 2026-07-02)
+
+The eval now routes through `RetrievalService` (shared with the query path) and
+takes a `-Prerank` / `-PtopN` Gradle toggle.
+
+| run                                        | recall@k | MRR   | result |
+|---------------------------------------------|----------|-------|--------|
+| rerank OFF (`:app:eval`)                     | 1.000    | 0.948 | reproduces this baseline exactly (`eval/reports/retrieval-1783017251102.md`) |
+| rerank ON (`-Prerank`, topN=30 and topN=10)  | —        | —     | **BLOCKED** — TEI request times out before returning a result |
+
+Rerank-OFF reproduces the baseline number-for-number, confirming the
+`RetrievalService` refactor did not change retrieval behavior.
+
+Rerank-ON could not be measured: `TeiRerankAdapter`'s `RestClient` has no
+explicit timeout configured, so it falls back to OkHttp's default 10s read
+timeout. Against real corpus-sized chunk text (not the short synthetic strings
+`TeiRerankIntegrationTest` uses), TEI `cpu-1.2` running under Colima's Rosetta
+emulation on this Mac does not respond within 10s even at `topN=10` (the
+smallest candidate batch possible, since `RetrievalService` floors `topN` at
+`topK=10` for the eval's max k-sweep) — confirmed by two failed runs
+(`java.net.SocketTimeoutException` at `TeiRerankAdapter.java:43`). This is an
+infra/timeout gap exposed by real-sized batches, not a defect in the eval
+routing or the Gradle toggle; configuring a longer `RestClient` timeout is out
+of this task's scope and left as a follow-up before Track A rerank-on numbers
+can be recorded.
+
 Recommended `k` for this corpus: recall and MRR are both flat across k=3..10 at
 N=45, so the current production default of 8 buys nothing on this set — **k=3 is
 sufficient for recall on this golden set**, though this is still a synthetic-set
