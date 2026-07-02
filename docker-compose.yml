@@ -57,6 +57,14 @@ services:
       - 'host.docker.internal:host-gateway'
     restart: unless-stopped
 
+  tei-reranker:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
+    command: ['--model-id', 'BAAI/bge-reranker-v2-m3']
+    ports:
+      - '8090:80'
+    volumes:
+      - tei_data:/data
+
   grafana:
     image: grafana/grafana:11.3.0
     container_name: rpg-grafana
@@ -82,3 +90,4 @@ volumes:
   open_webui_data:
   prometheus_data:
   grafana_data:
+  tei_data:
