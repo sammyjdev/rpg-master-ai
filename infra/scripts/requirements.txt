@@ -1,1 +1,5 @@
 requests>=2.31
+
+# local_reranker_server.py (native arm64 TEI stand-in, Slice 3)
+flask>=3.1
+sentence-transformers>=5.6

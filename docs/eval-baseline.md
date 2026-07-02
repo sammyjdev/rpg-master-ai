@@ -58,14 +58,29 @@ trade-off on this synthetic set. A CI-aware read: with recall@k already at
 exactly this shape (MRR gain, recall dip) rather than "free" MRR improvement
 — reranking traded a small amount of chunk-level recall for rank quality.
 
+**Caveat: these numbers were measured against the native stand-in
+(`local_reranker_server.py`), not the ONNX-backed real TEI container.** Only a
+single sanity-check query was cross-checked against real TEI's `/rerank`
+output (both agreed on ranking and scored the relevant chunk highest); the
+full 45-case sweep was not re-run against real TEI at this scale, since it
+measured too slow on this machine (see infra note below). Treat 0.978/0.963
+as measured-on-equivalent-weights numbers, not TEI-container-verified at
+production scale — re-validate against real TEI once running it is practical
+(native amd64 hardware, or CI).
+
 **Infra note (why this took two attempts to measure):** TEI (`cpu-1.2`) under
 Colima's Rosetta amd64 emulation on this Mac measured ~12s/chunk for real
-corpus-sized text — a 45-case × topN=30 sweep would take hours, and even the
-smallest batch (topN=10) exceeded a 60s `RestClient` timeout (added via
-`RestClientConfig`, since none was configured before — Spring's default
-inherited OkHttp's 10s read timeout, too tight for cross-encoder inference
-regardless of the emulation issue). The numbers above were measured instead
-against `infra/scripts/local_reranker_server.py`, a native arm64 stand-in
+corpus-sized text — a 45-case × topN=30 sweep would take hours. Before that
+measurement, a smaller topN=10 probe against the *unfixed* ~10s default
+timeout also failed (expected, since 10s doesn't even cover one round-trip at
+this rate) — that earlier failure was not re-run against real TEI with the
+60s timeout in place, so it should not be read as re-confirmed under the
+current config, only as consistent with the ~12s/chunk measurement. The
+`RestClient` 60s timeout was added via `RestClientConfig` (none was configured
+before — Spring's default inherited OkHttp's 10s read timeout, too tight for
+cross-encoder inference regardless of the emulation issue). The numbers above
+were measured instead against `infra/scripts/local_reranker_server.py`, a
+native arm64 stand-in
 serving the same model (`BAAI/bge-reranker-v2-m3` via `sentence-transformers`
 `CrossEncoder`, CPU device — MPS/Metal measured a pathological slowdown for
 this model's shapes) behind the identical `POST /rerank` contract TEI
