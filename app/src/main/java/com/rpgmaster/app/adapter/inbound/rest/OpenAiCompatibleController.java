@@ -21,6 +21,7 @@ import com.rpgmaster.app.application.QueryUseCase;
 import com.rpgmaster.app.application.port.DocumentRepository;
 import com.rpgmaster.app.config.RetrievalProperties;
 import com.rpgmaster.domain.QueryRequest;
+import com.rpgmaster.domain.SourceChunk;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -93,7 +94,9 @@ public class OpenAiCompatibleController {
                         0,
                         new OpenAiAssistantMessage("assistant", queryResult.answer()),
                         "stop"
-                ))
+                )),
+                queryResult.sources().stream().map(SourceChunk::text).toList(),
+                new OpenAiUsage(0, 0, queryResult.tokensUsed())
         );
         return ResponseEntity.ok(response);
     }
@@ -199,12 +202,19 @@ public class OpenAiCompatibleController {
                                                String object,
                                                long created,
                                                String model,
-                                               List<OpenAiChatChoice> choices) {
+                                               List<OpenAiChatChoice> choices,
+                                               List<String> contexts,
+                                               OpenAiUsage usage) {
     }
 
     public record OpenAiChatChoice(int index,
                                    OpenAiAssistantMessage message,
                                    @JsonProperty("finish_reason") String finishReason) {
+    }
+
+    public record OpenAiUsage(@JsonProperty("prompt_tokens") int promptTokens,
+                              @JsonProperty("completion_tokens") int completionTokens,
+                              @JsonProperty("total_tokens") int totalTokens) {
     }
 
     public record OpenAiAssistantMessage(String role, String content) {
