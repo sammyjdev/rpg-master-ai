@@ -21,9 +21,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.rpgmaster.app.application.QueryUseCase;
-import com.rpgmaster.app.application.port.EmbeddingPort;
+import com.rpgmaster.app.application.RetrievalService;
 import com.rpgmaster.app.application.port.LlmPort;
-import com.rpgmaster.app.application.port.VectorStorePort;
 import com.rpgmaster.app.observability.QueryAuditEvent;
 import com.rpgmaster.app.observability.QueryAuditLogger;
 import com.rpgmaster.app.observability.RagMetrics;
@@ -47,8 +46,7 @@ class QueryUseCaseTest {
     private static final String PROMPT = "You are an RPG rules assistant.";
     private static final String PROMPT_VERSION = "v1.0.0";
 
-    private EmbeddingPort embeddingPort;
-    private VectorStorePort vectorStorePort;
+    private RetrievalService retrievalService;
     private LlmPort llmPort;
     private QueryAuditLogger auditLogger;
     private RagMetrics metrics;
@@ -56,13 +54,12 @@ class QueryUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        embeddingPort = mock(EmbeddingPort.class);
-        vectorStorePort = mock(VectorStorePort.class);
+        retrievalService = mock(RetrievalService.class);
         llmPort = mock(LlmPort.class);
         auditLogger = mock(QueryAuditLogger.class);
         metrics = mock(RagMetrics.class);
         useCase = new QueryUseCase(
-                embeddingPort, vectorStorePort, llmPort,
+                retrievalService, llmPort,
                 PROMPT, PROMPT_VERSION,
                 auditLogger, metrics);
     }
@@ -73,12 +70,10 @@ class QueryUseCaseTest {
 
     @Test
     void blocking_happyPath_returnsAnswerAndEmitsAuditAndMetrics() {
-        var vector = List.of(0.1f, 0.2f, 0.3f);
         var sources = List.of(
                 chunk("c1", 241, "dnd-5e-phb"),
                 chunk("c2", 242, "dnd-5e-phb"));
-        when(embeddingPort.embed("What is a Fireball?")).thenReturn(vector);
-        when(vectorStorePort.search("dnd-5e-phb", vector, 5, 0.5f)).thenReturn(sources);
+        when(retrievalService.retrieve("dnd-5e-phb", "What is a Fireball?", 0.5f, 5)).thenReturn(sources);
         when(llmPort.generateBlocking(eq(PROMPT), eq("What is a Fireball?"), any()))
                 .thenReturn(new LlmResult("A 3rd-level fire spell.", 250, 100));
 
@@ -114,8 +109,7 @@ class QueryUseCaseTest {
 
     @Test
     void blocking_refusalPath_whenVectorStoreEmpty_skipsLlmAndReturnsRefusal() {
-        when(embeddingPort.embed(anyString())).thenReturn(List.of(0.1f, 0.2f));
-        when(vectorStorePort.search(anyString(), any(), anyInt(), anyFloat()))
+        when(retrievalService.retrieve(anyString(), anyString(), anyFloat(), anyInt()))
                 .thenReturn(List.of());
 
         var result = useCase.query(new QueryRequest("Obscure question", "dnd-5e-phb", 5, 0.5f));
@@ -141,30 +135,26 @@ class QueryUseCaseTest {
 
     @Test
     void blocking_passesExplicitRulebookIdToVectorStore() {
-        var vector = List.of(0.5f);
-        when(embeddingPort.embed(anyString())).thenReturn(vector);
-        when(vectorStorePort.search(eq("dnd-5e-dmg"), eq(vector), eq(3), eq(0.7f)))
+        when(retrievalService.retrieve(eq("dnd-5e-dmg"), anyString(), eq(0.7f), eq(3)))
                 .thenReturn(List.of(chunk("c1", 10, "dnd-5e-dmg")));
         when(llmPort.generateBlocking(anyString(), anyString(), any()))
                 .thenReturn(new LlmResult("answer", 10, 20));
 
         useCase.query(new QueryRequest("q", "dnd-5e-dmg", 3, 0.7f));
 
-        verify(vectorStorePort).search(eq("dnd-5e-dmg"), eq(vector), eq(3), eq(0.7f));
+        verify(retrievalService).retrieve(eq("dnd-5e-dmg"), eq("q"), eq(0.7f), eq(3));
     }
 
     @Test
     void blocking_passesNullRulebookIdForCrossRulebookSearch() {
-        var vector = List.of(0.5f);
-        when(embeddingPort.embed(anyString())).thenReturn(vector);
-        when(vectorStorePort.search(isNull(), eq(vector), anyInt(), anyFloat()))
+        when(retrievalService.retrieve(isNull(), anyString(), anyFloat(), anyInt()))
                 .thenReturn(List.of(chunk("c1", 1, "dnd-5e-phb")));
         when(llmPort.generateBlocking(anyString(), anyString(), any()))
                 .thenReturn(new LlmResult("answer", 5, 5));
 
         useCase.query(new QueryRequest("q", null, 8, 0.3f));
 
-        verify(vectorStorePort).search(isNull(), eq(vector), eq(8), eq(0.3f));
+        verify(retrievalService).retrieve(isNull(), eq("q"), eq(0.3f), eq(8));
 
         var eventCaptor = ArgumentCaptor.forClass(QueryAuditEvent.class);
         verify(auditLogger).log(eventCaptor.capture());
@@ -173,10 +163,8 @@ class QueryUseCaseTest {
 
     @Test
     void stream_happyPath_emitsTokensAndFiresAuditOnTerminate() {
-        var vector = List.of(0.1f, 0.2f);
         var sources = List.of(chunk("c1", 5, "dnd-5e-phb"));
-        when(embeddingPort.embed(anyString())).thenReturn(vector);
-        when(vectorStorePort.search(eq("dnd-5e-phb"), eq(vector), anyInt(), anyFloat()))
+        when(retrievalService.retrieve(eq("dnd-5e-phb"), anyString(), anyFloat(), anyInt()))
                 .thenReturn(sources);
         when(llmPort.generateStream(eq(PROMPT), eq("stream q"), any()))
                 .thenReturn(Flux.just("A ", "fireball ", "spell."));
@@ -202,8 +190,7 @@ class QueryUseCaseTest {
 
     @Test
     void stream_refusalPath_whenVectorStoreEmpty_returnsRefusalFluxAndSkipsLlm() {
-        when(embeddingPort.embed(anyString())).thenReturn(List.of(0.1f));
-        when(vectorStorePort.search(anyString(), any(), anyInt(), anyFloat()))
+        when(retrievalService.retrieve(anyString(), anyString(), anyFloat(), anyInt()))
                 .thenReturn(List.of());
 
         var tokens = useCase.queryStream(new QueryRequest("q", "dnd-5e-phb", 5, 0.5f))
