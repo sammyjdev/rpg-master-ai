@@ -15,6 +15,16 @@ comparison, not as absolute production numbers.
 
 Recall saturates at k=3; MRR is flat across the sweep.
 
+## Track A — rerank on vs off (Slice 3, `RetrievalService` routing, 2026-07-02)
+
+| run                                          | recall@k | MRR   | result |
+|-----------------------------------------------|----------|-------|--------|
+| rerank OFF (`./gradlew :app:eval`)            | 1.000    | 0.948 | reproduces Track A baseline exactly |
+| rerank ON (`-Prerank`, topN=30 and topN=10)   | —        | —     | **BLOCKED**: TEI `/rerank` times out (OkHttp default 10s read timeout, no override configured) on real corpus-sized chunk batches |
+
+Full explanation: `docs/eval-baseline.md` → "Track A: rerank on vs off". Numbers
+withheld deliberately — no fabricated rerank-on data.
+
 ## Track B — context_precision (two-judge, n=45, 8 runs, seed 42, identical inputs)
 
 | judge model | context_precision | 95% CI        |

@@ -11,8 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import com.rpgmaster.app.application.port.EmbeddingPort;
-import com.rpgmaster.app.application.port.VectorStorePort;
+import com.rpgmaster.app.application.RetrievalService;
 import com.rpgmaster.domain.SourceChunk;
 
 /**
@@ -28,8 +27,7 @@ class RetrievalBaselineEval {
     private static final int[] K_SWEEP = {3, 5, 8, 10};
     private static final float THRESHOLD = 0.3f;
 
-    @Autowired EmbeddingPort embeddingPort;
-    @Autowired VectorStorePort vectorStorePort;
+    @Autowired RetrievalService retrievalService;
 
     @Test
     void recordBaseline() throws IOException {
@@ -41,10 +39,9 @@ class RetrievalBaselineEval {
         double[] rrSum = new double[K_SWEEP.length];
 
         for (GoldenCase c : cases) {
-            var vector = embeddingPort.embed(c.question());
             // search once at maxK per rulebook of the case's first relevant page
             String rulebook = c.relevantPages().get(0).rulebookId();
-            List<SourceChunk> hits = vectorStorePort.search(rulebook, vector, maxK, THRESHOLD);
+            List<SourceChunk> hits = retrievalService.retrieve(rulebook, c.question(), THRESHOLD, maxK);
 
             List<RetrievalMetrics.RetrievedPage> retrieved = new ArrayList<>();
             for (SourceChunk h : hits) {
@@ -63,6 +60,7 @@ class RetrievalBaselineEval {
         StringBuilder md = new StringBuilder();
         md.append("# Retrieval baseline\n\n");
         md.append("Cases: ").append(n).append(", threshold: ").append(THRESHOLD).append("\n\n");
+        md.append("Rerank: ").append(System.getProperty("rpg.rerank.enabled", "false")).append("\n\n");
         md.append("| k | mean recall@k | mean MRR |\n|---|---|---|\n");
         for (int i = 0; i < K_SWEEP.length; i++) {
             md.append("| ").append(K_SWEEP[i]).append(" | ")
