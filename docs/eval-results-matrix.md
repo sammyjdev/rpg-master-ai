@@ -30,12 +30,16 @@ full explanation: `docs/eval-baseline.md` → "Track A: rerank on vs off".
 
 ## Track B — context_precision (two-judge, n=45, 8 runs, seed 42, identical inputs)
 
-| judge model | context_precision | 95% CI        |
-|-------------|-------------------|---------------|
-| llama3.1:8b | 0.810             | 0.774 – 0.836 |
-| gemma4:e4b  | 0.843             | 0.764 – 0.907 |
+| judge model | context_precision (OFF) | 95% CI (OFF)  | context_precision (ON) | 95% CI (ON)   | Δ      |
+|-------------|--------------------------|---------------|--------------------------|---------------|--------|
+| llama3.1:8b | 0.810                    | 0.774 – 0.836 | 0.844                    | 0.829 – 0.859 | +0.034 |
+| gemma4:e4b  | 0.843                    | 0.764 – 0.907 | 0.889                    | 0.818 – 0.947 | +0.046 |
 
-Two independent judges agree → robustness confirmed. (Snapshot, non-CI.)
+Two independent judges agree on OFF → robustness confirmed. **Rerank-ON beats
+both OFF baselines on both judges** — the plan's primary success criterion.
+llama's CI shift is the sharper of the two (little overlap); gemma's is
+directionally consistent but wider. (Snapshot, non-CI; native reranker
+stand-in, not real TEI at scale — see `docs/eval-baseline.md`.)
 
 ## Reranking headroom (what Slice 3 must beat)
 
@@ -46,3 +50,8 @@ Two independent judges agree → robustness confirmed. (Snapshot, non-CI.)
 | context_precision | 0.81–0.84 | 1.0     | ~0.16–0.19 | **largest — primary** |
 
 The precision half (context_precision) is the lever reranking should move most.
+
+**Result (Slice 3):** context_precision moved as predicted — the largest gain
+of the three metrics, both judges agree on direction. MRR also moved
+(+0.015, not predicted as "small" headroom pre-rerank but real). recall@k
+gave back a small amount (-0.022) as the trade-off (see Track A above).
