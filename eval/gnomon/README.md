@@ -7,7 +7,7 @@ OpenAI-compatible endpoint (`/v1/chat/completions`, model `all-rulebooks`).
 GNOMON lives at `~/dev/gnomon-eval`. This directory only holds RPG_MASTER's
 dataset + config for it.
 
-## Known gap — read before running live
+## Response contract — verified
 
 GNOMON's `OpenAICompatTarget` requires the target's chat/completions response
 to include a top-level `contexts` field (list of retrieved context strings)
@@ -15,10 +15,9 @@ and `usage.total_tokens`, or it fails closed with `IncompleteResponseError`
 (`~/dev/gnomon-eval/src/gnomon/targets/openai_compat.py`, VAL-03).
 
 `OpenAiCompatibleController` (`app/src/main/java/com/rpgmaster/app/adapter/inbound/rest/OpenAiCompatibleController.java`)
-currently returns `id, object, created, model, choices` only — no `contexts`,
-no `usage`. **A live GNOMON run against RPG_MASTER as it stands today will
-fail on the first case.** Extending the controller to add both fields is a
-separate change, out of scope for this wiring task.
+returns both fields on the non-streaming response: `contexts` (the retrieved
+source chunk texts) and `usage.total_tokens` (via the `OpenAiUsage` record).
+The guardrail is runnable against a live RPG_MASTER instance as-is.
 
 ## Run
 

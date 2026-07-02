@@ -33,4 +33,19 @@ class GoldenSetTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("x");
     }
+
+    @Test
+    void rejectsCaseSpanningMultipleRulebooks() {
+        var bad = """
+            [{"id":"multi-rb","question":"q","expectedAnswer":"a","relevantPages":[
+                {"rulebookId":"dnd-5e-phb","pageNumber":1},
+                {"rulebookId":"dnd-5e-mm","pageNumber":2}
+            ]}]
+            """;
+        var in = new ByteArrayInputStream(bad.getBytes(StandardCharsets.UTF_8));
+
+        assertThatThrownBy(() -> GoldenSet.load(in))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("multi-rb");
+    }
 }
