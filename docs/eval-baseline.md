@@ -38,26 +38,40 @@ not absolute production recall.
 The eval now routes through `RetrievalService` (shared with the query path) and
 takes a `-Prerank` / `-PtopN` Gradle toggle.
 
-| run                                        | recall@k | MRR   | result |
-|---------------------------------------------|----------|-------|--------|
-| rerank OFF (`:app:eval`)                     | 1.000    | 0.948 | reproduces this baseline exactly (`eval/reports/retrieval-1783017251102.md`) |
-| rerank ON (`-Prerank`, topN=30 and topN=10)  | —        | —     | **BLOCKED** — TEI request times out before returning a result |
+| run                          | recall@k | MRR   | result |
+|-------------------------------|----------|-------|--------|
+| rerank OFF (`:app:eval`)       | 1.000    | 0.948 | reproduces this baseline exactly (`eval/reports/retrieval-1783017251102.md`) |
+| rerank ON (`-Prerank`, topN=30, default topK=10) | 0.978 | 0.963 | `eval/reports/retrieval-1783020798176.md` |
 
 Rerank-OFF reproduces the baseline number-for-number, confirming the
 `RetrievalService` refactor did not change retrieval behavior.
 
-Rerank-ON could not be measured: `TeiRerankAdapter`'s `RestClient` has no
-explicit timeout configured, so it falls back to OkHttp's default 10s read
-timeout. Against real corpus-sized chunk text (not the short synthetic strings
-`TeiRerankIntegrationTest` uses), TEI `cpu-1.2` running under Colima's Rosetta
-emulation on this Mac does not respond within 10s even at `topN=10` (the
-smallest candidate batch possible, since `RetrievalService` floors `topN` at
-`topK=10` for the eval's max k-sweep) — confirmed by two failed runs
-(`java.net.SocketTimeoutException` at `TeiRerankAdapter.java:43`). This is an
-infra/timeout gap exposed by real-sized batches, not a defect in the eval
-routing or the Gradle toggle; configuring a longer `RestClient` timeout is out
-of this task's scope and left as a follow-up before Track A rerank-on numbers
-can be recorded.
+**Rerank-ON: MRR improved (0.948 → 0.963, +0.015), recall@k regressed slightly
+(1.000 → 0.978, flat across k=3..10)** — one of the 45 golden cases lost its
+relevant chunk from the top-k after reranking. Net effect on this set: the
+reranker pushes the correct chunk closer to rank 1 on the cases it keeps
+right, at the cost of one case where it now ranks the relevant chunk outside
+top-10 entirely. Both numbers move together across all four k values, so this
+isn't a k-sensitivity artifact — it's a real, if small, precision/recall
+trade-off on this synthetic set. A CI-aware read: with recall@k already at
+1.000 (ceiling) pre-rerank, any reranker that reorders imperfectly will show
+exactly this shape (MRR gain, recall dip) rather than "free" MRR improvement
+— reranking traded a small amount of chunk-level recall for rank quality.
+
+**Infra note (why this took two attempts to measure):** TEI (`cpu-1.2`) under
+Colima's Rosetta amd64 emulation on this Mac measured ~12s/chunk for real
+corpus-sized text — a 45-case × topN=30 sweep would take hours, and even the
+smallest batch (topN=10) exceeded a 60s `RestClient` timeout (added via
+`RestClientConfig`, since none was configured before — Spring's default
+inherited OkHttp's 10s read timeout, too tight for cross-encoder inference
+regardless of the emulation issue). The numbers above were measured instead
+against `infra/scripts/local_reranker_server.py`, a native arm64 stand-in
+serving the same model (`BAAI/bge-reranker-v2-m3` via `sentence-transformers`
+`CrossEncoder`, CPU device — MPS/Metal measured a pathological slowdown for
+this model's shapes) behind the identical `POST /rerank` contract TEI
+exposes, so `TeiRerankAdapter` needed no code changes. ~11s for a 30-chunk
+batch, full 45-case sweep in ~15 minutes. Production/CI on native amd64
+hardware would use the real TEI container without this workaround.
 
 Recommended `k` for this corpus: recall and MRR are both flat across k=3..10 at
 N=45, so the current production default of 8 buys nothing on this set — **k=3 is
