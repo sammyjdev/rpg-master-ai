@@ -100,8 +100,9 @@ current behaviour, so "off" reproduces the Slice-2 baseline.
 ## Configuration
 
 ```yaml
-# application.yml
-rag:
+# application.yml — note the config prefix is `rpg`, matching the existing
+# rpg.retrieval block (RetrievalProperties, @ConfigurationProperties("rpg.retrieval")).
+rpg:
   retrieval:
     top-k: 8
     similarity-threshold: 0.3
@@ -112,8 +113,10 @@ rag:
     base-url: http://localhost:8090   # TEI
 ```
 
-Profiles: `local` (rerank optional, off by default), a new `rerank` profile (or
-`rag.rerank.enabled=true` override) that turns it on for the A/B eval run. `top-n` is
+New `RerankProperties` record (`@ConfigurationProperties("rpg.rerank")`, auto-registered
+by the existing `@ConfigurationPropertiesScan("com.rpgmaster.app.config")`). Profiles:
+`local` (rerank optional, off by default), a new `rerank` profile (or
+`rpg.rerank.enabled=true` override) that turns it on for the A/B eval run. `top-n` is
 swept in the eval to pick a value, mirroring how Slice 1 swept k.
 
 ## Infrastructure — TEI
