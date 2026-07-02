@@ -2,10 +2,12 @@ package com.rpgmaster.app.config;
 
 import java.time.Duration;
 
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.web.client.ClientHttpRequestFactories;
 import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.web.client.RestClient;
 
 /**
@@ -23,6 +25,7 @@ public class RestClientConfig {
     private static final Duration READ_TIMEOUT = Duration.ofSeconds(60);
 
     @Bean
+    @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
     RestClient.Builder restClientBuilder() {
         var settings = ClientHttpRequestFactorySettings.DEFAULTS.withReadTimeout(READ_TIMEOUT);
         return RestClient.builder().requestFactory(ClientHttpRequestFactories.get(settings));
