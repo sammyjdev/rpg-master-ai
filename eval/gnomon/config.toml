@@ -18,11 +18,11 @@ confidence_level = 0.95
 kind = "openai_compat"
 base_url = "http://localhost:8080/v1"
 model = "all-rulebooks"
-# NOTE: RPG_MASTER's OpenAiCompatibleController does not yet emit a top-level
-# "contexts" field or "usage.total_tokens" in its chat/completions response.
-# OpenAICompatTarget requires both (VAL-03) and will raise
-# IncompleteResponseError against the endpoint as it stands today — see
-# README.md "Known gap" before running this live.
+# contexts_field left explicit even though it matches OpenAICompatTarget's
+# own default ("contexts") — RPG_MASTER's OpenAiCompatibleController now
+# emits both top-level "contexts" and "usage.total_tokens" in its
+# chat/completions response, resolving the gap previously noted here.
+contexts_field = "contexts"
 
 [judge]
 provider = "ollama"
