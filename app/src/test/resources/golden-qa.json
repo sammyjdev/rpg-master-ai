@@ -2,19 +2,19 @@
   {
     "id": "gq-001",
     "question": "What is an Ankheg's armor class?",
-    "expectedAnswer": "AC 14 (natural armor), 11 while prone.",
-    "relevantPages": [{ "rulebookId": "dnd-5e-mm", "pageNumber": 21 }]
+    "expectedAnswer": "AC 14 (natural armor).",
+    "relevantPages": [{ "rulebookId": "dnd-5e-mm", "pageNumber": 20 }]
   },
   {
     "id": "gq-002",
     "question": "How much damage does a Fireball spell deal?",
     "expectedAnswer": "8d6 fire damage on a failed Dexterity save, half on success.",
-    "relevantPages": [{ "rulebookId": "dnd-5e-phb", "pageNumber": 241 }]
+    "relevantPages": [{ "rulebookId": "dnd-5e-phb", "pageNumber": 222 }]
   },
   {
     "id": "gq-003",
     "question": "Quanto de dano causa uma bola de fogo?",
     "expectedAnswer": "8d6 de dano de fogo; metade com sucesso no teste de Destreza.",
-    "relevantPages": [{ "rulebookId": "dnd-5e-phb", "pageNumber": 241 }]
+    "relevantPages": [{ "rulebookId": "dnd-5e-phb", "pageNumber": 222 }]
   }
 ]
