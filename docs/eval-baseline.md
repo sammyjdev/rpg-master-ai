@@ -61,9 +61,45 @@ page to rank 1, raising MRR without needing more recall.
   first, but not with high separation. Consistent with the low threshold admitting
   weak matches — the precision problem reranking targets.
 
-## Answer quality (GNOMON, Track B) — not yet run
+## Answer quality (GNOMON, Track B) — snapshot, non-CI
 
-Blocked on the LLM: the app's chat model (qwen2.5:7b) is not hosted locally on this
-machine. Track B (faithfulness + context_precision via GNOMON) will run once the LLM
-is pointed at a hosted provider (OpenRouter), which needs a small `LlmPort`/Spring AI
-OpenAI-compat change. Track B does not affect the retrieval numbers above.
+Recorded 2026-07-02. This is an exploratory snapshot for the before/after-rerank
+comparison, **not** a reproducible committed baseline and **not** a CI gate — it
+depends on the GPU desktop being reachable. Track B does not affect the retrieval
+numbers above.
+
+Metric: `context_precision` (how relevant the retrieved contexts are to the
+question — the retrieval-precision half that recall@k / MRR structurally miss).
+`faithfulness` is reported too but is out of scope (generation-side).
+
+Setup:
+- **Generator** = `llama3.2:3b` on the Mac (Ollama). context_precision is defined
+  over (question, retrieved contexts) only — not the answer — so a small fast
+  generator is used deliberately (GNOMON's judge prompt does still include the
+  answer, since one call scores both metrics, but both judges see the *same* answer,
+  so the two-judge comparison stays fair). The production generator (`qwen2.5:7b`)
+  is unchanged; modernizing it + measuring faithfulness properly is a separate
+  follow-up.
+- **Judges** = two independent models on the GPU desktop (RTX 4070 Ti) over
+  Tailscale, for robustness.
+- **Method** = `infra/scripts/gnomon_batch_two_judges.py`: generate all 45 responses
+  **once**, then judge the *same* responses with each judge (8 runs each, seed 42,
+  95% bootstrap CI). Generate-once keeps the two judges' inputs identical and avoids
+  paying the slow local generation twice (GNOMON's own runner interleaves
+  generate→judge per case and re-generates every invocation).
+
+| judge model  | context_precision | 95% CI          | faithfulness¹ |
+|--------------|-------------------|-----------------|---------------|
+| llama3.1:8b  | 0.810             | 0.774 – 0.836   | 0.867         |
+| gemma4:e4b   | 0.843             | 0.764 – 0.907   | 0.906         |
+
+¹ `faithfulness` is shown for completeness only and is **not meaningful here**: it
+grades whether *the answer* is grounded, but the answers came from the throwaway
+`llama3.2:3b`, not the production generator. Do not read it as answer quality — a
+real faithfulness measurement needs the production generator (the separate
+follow-up above).
+
+The two independent judges agree (overlapping CIs, context_precision ≈ 0.81–0.84):
+the robustness signal that makes a local judge credible for the rerank comparison.
+Absolute values are on a chunk-anchored synthetic set, so they matter for relative
+before/after-rerank movement, not as absolute production precision.

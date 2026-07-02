@@ -16,13 +16,17 @@ confidence_level = 0.95
 
 [target]
 kind = "openai_compat"
-base_url = "http://localhost:8080/v1"
+base_url = "http://localhost:8082/v1"
 model = "all-rulebooks"
 # contexts_field left explicit even though it matches OpenAICompatTarget's
 # own default ("contexts") — RPG_MASTER's OpenAiCompatibleController now
 # emits both top-level "contexts" and "usage.total_tokens" in its
 # chat/completions response, resolving the gap previously noted here.
 contexts_field = "contexts"
+# qwen2.5:7b generation on Mac CPU/Metal measured ~44s/call — default 30s
+# timeout_s trips TransportError before the answer completes. Raised to
+# clear that with headroom.
+timeout_s = 120.0
 
 [judge]
 provider = "ollama"
