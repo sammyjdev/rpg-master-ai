@@ -20,10 +20,13 @@ Recall saturates at k=3; MRR is flat across the sweep.
 | run                                          | recall@k | MRR   | result |
 |-----------------------------------------------|----------|-------|--------|
 | rerank OFF (`./gradlew :app:eval`)            | 1.000    | 0.948 | reproduces Track A baseline exactly |
-| rerank ON (`-Prerank`, topN=30 and topN=10)   | —        | —     | **BLOCKED**: TEI `/rerank` times out (OkHttp default 10s read timeout, no override configured) on real corpus-sized chunk batches |
+| rerank ON (`-Prerank`, topN=30, topK=10)      | 0.978    | 0.963 | MRR +0.015, recall@k -0.022 (flat across k=3..10) |
 
-Full explanation: `docs/eval-baseline.md` → "Track A: rerank on vs off". Numbers
-withheld deliberately — no fabricated rerank-on data.
+MRR improved, recall@k dipped slightly (one of 45 cases lost its relevant
+chunk from top-k after reranking) — a real precision/recall trade-off, not a
+free win. Measured against a native arm64 stand-in for TEI (real TEI under
+this Mac's Docker emulation was measured too slow to run a 45-case sweep);
+full explanation: `docs/eval-baseline.md` → "Track A: rerank on vs off".
 
 ## Track B — context_precision (two-judge, n=45, 8 runs, seed 42, identical inputs)
 
