@@ -1,0 +1,38 @@
+# GNOMON run config for RPG_MASTER's live OpenAI-compat endpoint.
+# Field shape mirrors ~/dev/gnomon-eval/src/gnomon/config/run_config.py
+# (RunConfig / TargetConfig / JudgeConfig / GateConfig) verbatim — not the
+# {question, reference_answer} / [dataset] sketch from the task brief, which
+# does not match GNOMON's actual schema.
+#
+# dataset_path is resolved relative to the CWD gnomon is invoked from — run
+# gnomon from this directory (see ../README.md), not from ~/dev/gnomon-eval.
+dataset_path = "dataset.json"
+
+[eval]
+reproducible = true
+seed = 42
+judge_runs = 8
+confidence_level = 0.95
+
+[target]
+kind = "openai_compat"
+base_url = "http://localhost:8080/v1"
+model = "all-rulebooks"
+# NOTE: RPG_MASTER's OpenAiCompatibleController does not yet emit a top-level
+# "contexts" field or "usage.total_tokens" in its chat/completions response.
+# OpenAICompatTarget requires both (VAL-03) and will raise
+# IncompleteResponseError against the endpoint as it stands today — see
+# README.md "Known gap" before running this live.
+
+[judge]
+provider = "ollama"
+# Reuses RPG_MASTER's own local chat model (application-local.yml) so no
+# extra pull is needed for this first wiring. Swap for a stronger/different
+# model later to avoid same-model self-preference bias.
+model = "qwen2.5:7b"
+base_url = "http://localhost:11434"
+
+[gate]
+# Record-only on this first wiring — no build should fail on these yet.
+faithfulness = 0.0
+context_precision = 0.0

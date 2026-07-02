@@ -1,0 +1,16 @@
+[ {
+  "id" : "gq-001",
+  "question" : "What is an Ankheg's armor class?",
+  "expected_answer" : "AC 14 (natural armor), 11 while prone.",
+  "expected_contexts" : [ "dnd-5e-mm page 21" ]
+}, {
+  "id" : "gq-002",
+  "question" : "How much damage does a Fireball spell deal?",
+  "expected_answer" : "8d6 fire damage on a failed Dexterity save, half on success.",
+  "expected_contexts" : [ "dnd-5e-phb page 241" ]
+}, {
+  "id" : "gq-003",
+  "question" : "Quanto de dano causa uma bola de fogo?",
+  "expected_answer" : "8d6 de dano de fogo; metade com sucesso no teste de Destreza.",
+  "expected_contexts" : [ "dnd-5e-phb page 241" ]
+} ]
