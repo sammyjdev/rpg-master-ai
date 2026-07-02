@@ -34,7 +34,7 @@ class RetrievalBaselineEval {
     @Test
     void recordBaseline() throws IOException {
         var cases = GoldenSet.load(getClass().getResourceAsStream("/golden-qa.json"));
-        int maxK = 10;
+        int maxK = java.util.Arrays.stream(K_SWEEP).max().getAsInt();
 
         // per-k accumulators
         double[] recallSum = new double[K_SWEEP.length];

@@ -44,6 +44,11 @@ public final class GoldenSet {
                 throw new IllegalArgumentException("golden case '" + id + "' has an invalid relevantPage");
             }
         }
+        long distinctRulebooks = c.relevantPages().stream().map(RelevantPage::rulebookId).distinct().count();
+        if (distinctRulebooks > 1) {
+            throw new IllegalArgumentException("golden case '" + id
+                    + "' spans multiple rulebooks; Track A retrieval eval is single-rulebook per case");
+        }
     }
 
     private static boolean isBlank(String s) {
