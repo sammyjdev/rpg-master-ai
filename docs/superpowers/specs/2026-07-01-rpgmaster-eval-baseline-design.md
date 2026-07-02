@@ -71,8 +71,15 @@ a separate spec that will be validated against the baseline this slice produces.
 
 ## Track A — deterministic retrieval metric (primary)
 
-- Lives as an in-repo Java test under `app/src/test/`, calling `VectorStorePort.search`
-  **directly** — no HTTP, no LLM, no answer generation.
+- Realized in two pieces, aligned with the repo's Gradle setup and the `./gradlew
+  eval` harness the README already envisions (milestone 2.1):
+  1. **Metric math as a pure unit test** (`app/src/test/`, no infra): `recall@k` and
+     `MRR` functions, TDD'd against hand-built fixtures. CI-safe, deterministic.
+  2. **`./gradlew eval` harness** (corpus-dependent, dev-run, not a CI gate): loads
+     the golden set, embeds each question via the real `EmbeddingPort` (bge-m3 /
+     Ollama) and calls `VectorStorePort.search` **directly** against the ingested
+     Qdrant corpus (via `docker-compose`), sweeps k, and writes
+     `eval/reports/retrieval-<timestamp>.md`. No HTTP, no answer generation.
 - For each golden `question`: run search, take the top-k returned chunks, compare
   their `(rulebookId, pageNumber)` against `relevant_pages`.
 - Metrics: `recall@k` (did a relevant page make the top-k) and `MRR` (how high did
@@ -96,8 +103,9 @@ a separate spec that will be validated against the baseline this slice produces.
   (`QueryUseCase` → `result.sources()`). Calling the port avoids a new endpoint, CLI
   output parsing, and an HTTP hop — smallest diff, most robust. It is a port
   consumer like any other, consistent with the hexagonal architecture (ADR-004).
-- Runs natively under `mvn test` / CI. Can gate on a `recall@k` floor once the
-  baseline is recorded.
+- The metric unit test runs natively under `./gradlew test` / CI. The `./gradlew
+  eval` harness runs against a live stack; it records the baseline and is not a CI
+  gate until the corpus is available in CI (out of scope here).
 
 ## Track B — answer-quality guardrail (GNOMON)
 
@@ -155,8 +163,9 @@ golden-qa.json ──┬─→ Track A (Java test) ─→ VectorStorePort.search
 ## Success criteria
 
 - `golden-qa.json` exists with ~20-30 validated cases.
-- Track A runs under `mvn test`, prints `recall@k` and `MRR` across
-  `k ∈ {3, 5, 8, 10}`, backed by a unit check on the metric math.
+- `./gradlew eval` prints `recall@k` and `MRR` across `k ∈ {3, 5, 8, 10}` and writes
+  a report under `eval/reports/`; the metric math is backed by a `./gradlew test`
+  unit check.
 - GNOMON runs against a live instance and reports `faithfulness` + `context_precision`
   with CIs.
 - Baseline numbers are recorded (in this repo, e.g. a short `docs/eval-baseline.md`)
