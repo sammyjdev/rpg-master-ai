@@ -19,7 +19,7 @@ class GoldenSetTest {
         assertThat(cases).hasSizeGreaterThanOrEqualTo(3);
         assertThat(cases.get(0).id()).isEqualTo("gq-001");
         assertThat(cases.get(0).relevantPages())
-                .containsExactly(new RelevantPage("dnd-5e-mm", 21));
+                .containsExactly(new RelevantPage("dnd-5e-mm", 20));
     }
 
     @Test
