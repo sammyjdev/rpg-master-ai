@@ -89,6 +89,8 @@ tasks.register('integrationTest', Test) {
     useJUnitPlatform()
     jvmArgs '-XX:+EnableDynamicAgentLoading'
     shouldRunAfter test
+    // Needs a live stack (Qdrant + Ollama + ingested corpus) — run via :app:eval only.
+    filter { excludeTestsMatching 'com.rpgmaster.app.eval.RetrievalBaselineEval' }
 
     // Surface full failure causes (Spring context load errors, missing classes) in CI logs.
     testLogging {
