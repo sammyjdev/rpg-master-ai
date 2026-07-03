@@ -329,3 +329,17 @@ Full reference material for all increments is preserved in `AGENT-*.md` at the r
 | `.github/instructions/kafka.instructions.md`         | `**/*Kafka*.java`                    | Kafka: topic config, consumer/producer patterns, event schemas       |
 | `.github/instructions/infra.instructions.md`         | `docker-compose*.yml`                | Docker Compose: service naming, volume conventions                   |
 | `.github/prompts/linkedin-article.prompt.md`         | manual                               | LinkedIn article structure, RPG analogies, publishing checklist      |
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked as GitHub issues via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Canonical five-role triage vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
