@@ -89,6 +89,8 @@ tasks.register('integrationTest', Test) {
     useJUnitPlatform()
     jvmArgs '-XX:+EnableDynamicAgentLoading'
     shouldRunAfter test
+    // Needs a live stack (Qdrant + Ollama + ingested corpus) — run via :app:eval only.
+    filter { excludeTestsMatching 'com.rpgmaster.app.eval.RetrievalBaselineEval' }
 
     // Surface full failure causes (Spring context load errors, missing classes) in CI logs.
     testLogging {
@@ -112,6 +114,23 @@ tasks.register('integrationTest', Test) {
     if (dockerApiVersion) {
         systemProperty 'api.version', dockerApiVersion
         environment 'DOCKER_API_VERSION', dockerApiVersion
+    }
+}
+
+tasks.register('eval', Test) {
+    description = 'Records the retrieval baseline against a live stack (Qdrant + Ollama, corpus ingested). Not part of CI.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    useJUnitPlatform()
+    jvmArgs '-XX:+EnableDynamicAgentLoading'
+    filter { includeTestsMatching 'com.rpgmaster.app.eval.RetrievalBaselineEval' }
+    outputs.upToDateWhen { false }   // always re-run; it records fresh numbers
+    if (project.hasProperty('rerank')) {
+        systemProperty 'rpg.rerank.enabled', 'true'
+        if (project.hasProperty('topN')) {
+            systemProperty 'rpg.rerank.top-n', project.property('topN')
+        }
     }
 }
 

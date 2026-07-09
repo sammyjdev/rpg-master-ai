@@ -57,6 +57,20 @@ services:
       - 'host.docker.internal:host-gateway'
     restart: unless-stopped
 
+  tei-reranker:
+    # Pinned for Apple Silicon dev only: cpu-1.5/1.7 segfault (SIGSEGV) loading the Candle
+    # CPU backend under Colima's Rosetta amd64 emulation; cpu-1.2 does not (verified via
+    # manual /rerank call). Native amd64 hosts (CI, cloud) are untested and may not need
+    # this pin — retest cpu-latest there before assuming it's required everywhere.
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.2
+    # HF TEI publishes amd64-only images; force emulation via Colima Rosetta on Apple Silicon.
+    platform: linux/amd64
+    command: ['--model-id', 'BAAI/bge-reranker-v2-m3']
+    ports:
+      - '8090:80'
+    volumes:
+      - tei_data:/data
+
   grafana:
     image: grafana/grafana:11.3.0
     container_name: rpg-grafana
@@ -82,3 +96,4 @@ volumes:
   open_webui_data:
   prometheus_data:
   grafana_data:
+  tei_data:
