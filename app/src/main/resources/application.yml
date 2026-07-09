@@ -23,18 +23,47 @@ qdrant:
   host: localhost
   port: 6334
 
+# RAG retrieval defaults — single source of truth for REST and CLI
+rpg:
+  retrieval:
+    top-k: 8
+    similarity-threshold: 0.3
+  # Cross-encoder reranking (Slice 3). Off by default; enabled for the A/B eval.
+  rerank:
+    enabled: false
+    top-n: 30
+    # Documentation-only: the app never reads this. Keep in sync with the TEI
+    # container's --model-id launch argument, which actually selects the model.
+    model: BAAI/bge-reranker-v2-m3
+    base-url: http://localhost:8090
+  # Cost model used by rpg.query.cost_usd counter.
+  # Defaults to 0 (local Ollama is free); override per-profile when targeting paid providers.
+  metrics:
+    cost:
+      prompt-usd-per-1k: 0.0
+      completion-usd-per-1k: 0.0
+
 # Actuator endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
   metrics:
     tags:
       service: ${spring.application.name}
+    # Enable Prometheus histogram buckets on our Timers so PromQL histogram_quantile
+    # can compute P50 / P95 / P99 in the Grafana dashboard (O3).
+    distribution:
+      percentiles-histogram:
+        rpg.query.latency: true
+        rpg.embedding.latency: true
+      slo:
+        rpg.query.latency: 1s,3s,5s,10s,15s,30s
+        rpg.embedding.latency: 100ms,500ms,1s,5s,30s
 
 # Spring Shell prompt
 spring.shell:
@@ -48,3 +77,6 @@ logging:
     com.rpgmaster: INFO
     org.springframework.ai: INFO
     io.qdrant: WARN
+    # One structured JSON line per RAG query — see QueryAuditLogger.
+    # Lower to WARN in test profiles or pipe to a separate appender in prod.
+    rpg.query.audit: INFO

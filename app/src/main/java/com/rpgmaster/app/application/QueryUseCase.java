@@ -7,9 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import com.rpgmaster.app.application.port.EmbeddingPort;
 import com.rpgmaster.app.application.port.LlmPort;
-import com.rpgmaster.app.application.port.VectorStorePort;
+import com.rpgmaster.app.observability.QueryAuditEvent;
+import com.rpgmaster.app.observability.QueryAuditLogger;
+import com.rpgmaster.app.observability.RagMetrics;
 import com.rpgmaster.domain.LlmResult;
 import com.rpgmaster.domain.QueryRequest;
 import com.rpgmaster.domain.QueryResult;
@@ -26,27 +27,33 @@ import reactor.core.publisher.Flux;
  *   <li>Return answer + source attribution</li>
  * </ol>
  *
- * <p>The {@link #queryStream} method returns a {@code Flux<String>} for Increment 2
- * SSE streaming. The CLI {@link #query} method blocks and collects the full answer.
+ * <p>Every query emits one {@link QueryAuditEvent} on the {@code rpg.query.audit}
+ * logger so prompt-version regressions and retrieval quality can be measured offline.
  */
 @Service
 public class QueryUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(QueryUseCase.class);
 
-    private final EmbeddingPort embeddingPort;
-    private final VectorStorePort vectorStorePort;
+    private final RetrievalService retrievalService;
     private final LlmPort llmPort;
-        private final String ragSystemPrompt;
+    private final String ragSystemPrompt;
+    private final String ragPromptVersion;
+    private final QueryAuditLogger auditLogger;
+    private final RagMetrics metrics;
 
-    public QueryUseCase(EmbeddingPort embeddingPort,
-                        VectorStorePort vectorStorePort,
-                                                LlmPort llmPort,
-                                                @Qualifier("ragSystemPrompt") String ragSystemPrompt) {
-        this.embeddingPort = embeddingPort;
-        this.vectorStorePort = vectorStorePort;
+    public QueryUseCase(RetrievalService retrievalService,
+                        LlmPort llmPort,
+                        @Qualifier("ragSystemPrompt") String ragSystemPrompt,
+                        @Qualifier("ragPromptVersion") String ragPromptVersion,
+                        QueryAuditLogger auditLogger,
+                        RagMetrics metrics) {
+        this.retrievalService = retrievalService;
         this.llmPort = llmPort;
-                this.ragSystemPrompt = ragSystemPrompt;
+        this.ragSystemPrompt = ragSystemPrompt;
+        this.ragPromptVersion = ragPromptVersion;
+        this.auditLogger = auditLogger;
+        this.metrics = metrics;
     }
 
     /**
@@ -61,46 +68,66 @@ public class QueryUseCase {
 
         log.info("Query: '{}', rulebook={}, topK={}", request.question(), request.rulebookId(), request.topK());
 
-        // Step 1: Embed question
-        var queryVector = embeddingPort.embed(request.question());
-
-        // Step 2: Retrieve top-K chunks from Qdrant
-        var sources = vectorStorePort.search(
-                request.rulebookId(), queryVector, request.topK(), request.similarityThreshold()
+        var sources = retrievalService.retrieve(
+                request.rulebookId(), request.question(), request.similarityThreshold(), request.topK()
         );
         log.info("Retrieved {} chunks from Qdrant", sources.size());
 
         if (sources.isEmpty()) {
-            return new QueryResult("Not found in the rulebook.", List.of(), 0,
-                    System.currentTimeMillis() - startMs);
+            var latencyMs = System.currentTimeMillis() - startMs;
+            auditLogger.log(new QueryAuditEvent(
+                    ragPromptVersion, request.rulebookId(), "blocking",
+                    request.topK(), request.similarityThreshold(),
+                    0, 0, 0, latencyMs));
+            metrics.recordQuery(request.rulebookId(), latencyMs, 0, 0);
+            return new QueryResult("Not found in the rulebook.", List.of(), 0, latencyMs);
         }
 
-        // Step 3: Build context with page/rulebook metadata and call LLM (blocking for CLI)
         var contextTexts = buildContextWithMetadata(sources);
         LlmResult llmResult = llmPort.generateBlocking(ragSystemPrompt, request.question(), contextTexts);
         var latencyMs = System.currentTimeMillis() - startMs;
 
         log.info("Query complete in {}ms, tokensUsed={}", latencyMs, llmResult.tokensUsed());
+        auditLogger.log(new QueryAuditEvent(
+                ragPromptVersion, request.rulebookId(), "blocking",
+                request.topK(), request.similarityThreshold(),
+                sources.size(), llmResult.promptTokens(), llmResult.completionTokens(), latencyMs));
+        metrics.recordQuery(request.rulebookId(), latencyMs, llmResult.promptTokens(), llmResult.completionTokens());
         return new QueryResult(llmResult.text(), sources, llmResult.tokensUsed(), latencyMs);
     }
 
     /**
      * Executes a RAG query and returns a token stream (non-blocking).
-     * Used by REST SSE endpoint in Increment 2+.
+     * Used by the REST SSE endpoint. Audit event is emitted on stream completion;
+     * token counts come in with Micrometer (task O1).
      *
      * @param request the query request
      * @return flux of LLM response tokens
      */
     public Flux<String> queryStream(QueryRequest request) {
-        var queryVector = embeddingPort.embed(request.question());
-        var sources = vectorStorePort.search(
-                request.rulebookId(), queryVector, request.topK(), request.similarityThreshold()
+        var startMs = System.currentTimeMillis();
+        var sources = retrievalService.retrieve(
+                request.rulebookId(), request.question(), request.similarityThreshold(), request.topK()
         );
         if (sources.isEmpty()) {
+            var latencyMs = System.currentTimeMillis() - startMs;
+            auditLogger.log(new QueryAuditEvent(
+                    ragPromptVersion, request.rulebookId(), "stream",
+                    request.topK(), request.similarityThreshold(),
+                    0, 0, 0, latencyMs));
+            metrics.recordQuery(request.rulebookId(), latencyMs, 0, 0);
             return Flux.just("Not found in the rulebook.");
         }
         var contextTexts = buildContextWithMetadata(sources);
-        return llmPort.generateStream(ragSystemPrompt, request.question(), contextTexts);
+        return llmPort.generateStream(ragSystemPrompt, request.question(), contextTexts)
+                .doOnTerminate(() -> {
+                    var latencyMs = System.currentTimeMillis() - startMs;
+                    auditLogger.log(new QueryAuditEvent(
+                            ragPromptVersion, request.rulebookId(), "stream",
+                            request.topK(), request.similarityThreshold(),
+                            sources.size(), 0, 0, latencyMs));
+                    metrics.recordQuery(request.rulebookId(), latencyMs, 0, 0);
+                });
     }
 
     private List<String> buildContextWithMetadata(List<SourceChunk> sources) {

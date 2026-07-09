@@ -1,0 +1,226 @@
+[ {
+  "id" : "gq-001",
+  "question" : "What is an Ankheg's armor class?",
+  "expected_answer" : "AC 14 (natural armor).",
+  "expected_contexts" : [ "dnd-5e-mm page 20" ]
+}, {
+  "id" : "gq-002",
+  "question" : "How much damage does a Fireball spell deal?",
+  "expected_answer" : "8d6 fire damage on a failed Dexterity save, half on success.",
+  "expected_contexts" : [ "dnd-5e-phb page 222" ]
+}, {
+  "id" : "gq-003",
+  "question" : "Quanto de dano causa uma bola de fogo?",
+  "expected_answer" : "8d6 de dano de fogo; metade com sucesso no teste de Destreza.",
+  "expected_contexts" : [ "dnd-5e-phb page 222" ]
+}, {
+  "id" : "gq-004",
+  "question" : "Quem foi o ilustrador da capa do livro?",
+  "expected_answer" : "Tyler Jacobson",
+  "expected_contexts" : [ "dnd-5e-phb page 3" ]
+}, {
+  "id" : "gq-005",
+  "question" : "Quais são as características físicas dos elfos do sol e elfos da lua?",
+  "expected_answer" : "Os elfos do sol têm pele bronzeada, cabelos cor de cobre, negros ou louro dourado, e olhos dourados, prateados ou negros. Os elfos da lua são mais pálidos, com pele de alabastro tingida de azul, cabelos brancos prateados, negros ou azuis, e olhos azuis ou verdes com manchas douradas.",
+  "expected_contexts" : [ "dnd-5e-phb page 27" ]
+}, {
+  "id" : "gq-006",
+  "question" : "Quantas vezes posso usar a característica de Inspiração de Bardo antes de um descanso longo?",
+  "expected_answer" : "Você pode usar essa característica um número de vezes igual ao seu modificador de Carisma (no mínimo uma vez).",
+  "expected_contexts" : [ "dnd-5e-phb page 55" ]
+}, {
+  "id" : "gq-007",
+  "question" : "Quais são as limitações para a transformação em formas animais usando a Forma Selvagem?",
+  "expected_answer" : "Você pode se transformar em uma besta com nível de desafio até 1 a partir do 2° nível, ignorando a coluna ND Max da tabela Formas de Besta, mas ainda deve acatar as limitações descritas lá. A partir do 6° nível, você pode se transformar em uma besta com nível de desafio tão alto quanto seu nível de druida dividido por 3, arredondado para baixo.",
+  "expected_contexts" : [ "dnd-5e-phb page 77" ]
+}, {
+  "id" : "gq-008",
+  "question" : "Quais são os benefícios que um personagem da escola de adivinhação recebe a partir do 14° nível?",
+  "expected_answer" : "A partir do 14° nível, você tem vantagem em testes de resistência contra magia e resistência contra o dano de magias.",
+  "expected_contexts" : [ "dnd-5e-phb page 99" ]
+}, {
+  "id" : "gq-009",
+  "question" : "Quais são as opções de características que um Patrulheiro pode escolher ao atingir o 3º nível no Conclave do Caçador?",
+  "expected_answer" : "As opções são: Assassino de Colossos, Matador de Gigantes e Rompedor de Hordas.",
+  "expected_contexts" : [ "dnd-5e-phb page 120" ]
+}, {
+  "id" : "gq-010",
+  "question" : "Como eu posso determinar a quantidade de ouro que meu personagem começa com?",
+  "expected_answer" : "Você pode consultar a tabela Riqueza Inicial por Classe para determinar a quantidade de ouro que seu personagem tem para gastar, que é baseada em sua classe.",
+  "expected_contexts" : [ "dnd-5e-phb page 144" ]
+}, {
+  "id" : "gq-011",
+  "question" : "Quais são os benefícios do talento Mestre de Armas Grandes?",
+  "expected_answer" : "Você recebe os seguintes benefícios: • No seu turno, quando você atingir um acerto crítico com uma arma corpo-a-corpo ou reduzir os pontos de vida de uma criatura a 0, você pode realizar um ataque corpo-a-corpo com arma, com uma ação bônus. • Antes de você realizar um ataque corpo-a-corpo com uma arma pesada na qual você seja proficiente, você pode escolher sofrer -5 de penalidade em sua jogada de ataque. Se o ataque atingir, você adiciona +10 ao dano do ataque.",
+  "expected_contexts" : [ "dnd-5e-phb page 170" ]
+}, {
+  "id" : "gq-012",
+  "question" : "Como posso usar a ação Preparar durante meu turno?",
+  "expected_answer" : "Para usar a ação Preparar, você deve decidir uma circunstância que será o gatilho da sua reação e escolher a ação que irá realizar em resposta a esse gatilho. Você pode agir até o início do seu próximo turno.",
+  "expected_contexts" : [ "dnd-5e-phb page 194" ]
+}, {
+  "id" : "gq-013",
+  "question" : "O que acontece se a magia Arca Secreta de Leomund terminar enquanto o baú estiver no Plano Etéreo?",
+  "expected_answer" : "Ele estará irremediavelmente perdido.",
+  "expected_contexts" : [ "dnd-5e-phb page 217" ]
+}, {
+  "id" : "gq-014",
+  "question" : "O que acontece com uma besta ou planta que é alvo da magia Despertar?",
+  "expected_answer" : "A besta ou planta ganha Inteligência 10, a capacidade de falar um idioma que você conheça, e se for uma planta, ganha a habilidade de mover seus membros e sentidos similares ao de um humano. Ela ficará enfeitiçada por você por 30 dias, a menos que você ou seus companheiros façam algo nocivo contra ela.",
+  "expected_contexts" : [ "dnd-5e-phb page 238" ]
+}, {
+  "id" : "gq-015",
+  "question" : "Quantos servos podem atender na mansão criada pela magia?",
+  "expected_answer" : "Uma equipe de 100 servos semitransparentes atende todos que entrarem.",
+  "expected_contexts" : [ "dnd-5e-phb page 257" ]
+}, {
+  "id" : "gq-016",
+  "question" : "O que acontece com um corpo que é afetado pela magia Repouso Tranquilo?",
+  "expected_answer" : "O corpo ficará protegido de decomposição e não poderá se tornar um morto-vivo. Além disso, os dias sob a influência dessa magia não contam para o limite de tempo para trazer o alvo de volta à vida.",
+  "expected_contexts" : [ "dnd-5e-phb page 278" ]
+}, {
+  "id" : "gq-017",
+  "question" : "Quais são as características principais da Agrestia das Fadas e do Pendor das Sombras?",
+  "expected_answer" : "Agrestia das Fadas é uma terra de luzes suaves, um reino de eterno crepúsculo com lanternas e enormes vagalumes, enquanto o Pendor das Sombras é uma dimensão sombriamente iluminada, um mundo em preto e branco onde a cor foi distorcida.",
+  "expected_contexts" : [ "dnd-5e-phb page 301" ]
+}, {
+  "id" : "gq-018",
+  "question" : "O que é considerado uma masmorra em D&D?",
+  "expected_answer" : "No jogo de D&D, a palavra 'masmorra' inclui qualquer local fechado infestado de monstros, não se limitando apenas a celas escuras.",
+  "expected_contexts" : [ "dnd-5e-mm page 4" ]
+}, {
+  "id" : "gq-019",
+  "question" : "O que acontece se uma criatura falhar no teste de resistência contra o olhar do basilisco?",
+  "expected_answer" : "Se a criatura falhar no teste de resistência, ela magicamente começa a se transformar em pedra e fica impedida. Ela deve repetir o teste de resistência no final do próximo turno. Se falhar novamente, a criatura é petrificada até ser liberta por magia restauração maior ou outro efeito mágico.",
+  "expected_contexts" : [ "dnd-5e-mm page 26" ]
+}, {
+  "id" : "gq-020",
+  "question" : "Quem é a Rainha Demoníaca das Aranhas e qual é sua aparência quando se manifesta?",
+  "expected_answer" : "A Rainha Demoníaca das Aranhas é Lolth, que tem a aparência de uma flexível e arrogante drow matriarca quando se manifesta para suas seguidoras no reino mortal.",
+  "expected_contexts" : [ "dnd-5e-mm page 50" ]
+}, {
+  "id" : "gq-021",
+  "question" : "Quais são as resistências e imunidades do Diabo dos Espinhos?",
+  "expected_answer" : "Resistência a dano frio; concussão, cortante e perfurante de ataques não-mágicos que não sejam de prata. Imunidade a dano fogo, veneno e à condição envenenado.",
+  "expected_contexts" : [ "dnd-5e-mm page 79" ]
+}, {
+  "id" : "gq-022",
+  "question" : "Qual é o dano causado pelo sopro flamejante do dragão vermelho filhote?",
+  "expected_answer" : "24 (7d6) de dano de fogo se falhar na resistência, ou metade desse dano caso obtenha sucesso.",
+  "expected_contexts" : [ "dnd-5e-mm page 100" ]
+}, {
+  "id" : "gq-023",
+  "question" : "Quais magias uma dríade pode conjurar inatamente e quantas vezes por dia?",
+  "expected_answer" : "A dríade pode conjurar druidismo à vontade, bom fruto e constrição 3 vezes por dia cada, e bordão místico, passos sem pegadas e pele de árvore 1 vez por dia cada.",
+  "expected_contexts" : [ "dnd-5e-mm page 119" ]
+}, {
+  "id" : "gq-024",
+  "question" : "O que são os fogos-fátuos e como eles afetam as criaturas ao seu redor?",
+  "expected_answer" : "Os fogos-fátuos são almas de seres malignos que pereceram em agonia ou miséria. Eles atraem criaturas desatentas para locais perigosos, se alimentando de sua miséria e sofrimento.",
+  "expected_contexts" : [ "dnd-5e-mm page 144" ]
+}, {
+  "id" : "gq-025",
+  "question" : "Qual é o dano total de um golpe desarmado do githzerai?",
+  "expected_answer" : "11 (2d6 + 4) de dano de concussão mais 13 (3d8) de dano psíquico.",
+  "expected_contexts" : [ "dnd-5e-mm page 168" ]
+}, {
+  "id" : "gq-026",
+  "question" : "Quais são as habilidades especiais do kenku e como elas funcionam em combate?",
+  "expected_answer" : "O kenku possui a habilidade 'Emboscador', que lhe dá vantagem nas jogadas de ataque contra criaturas que ele surpreender. Além disso, ele tem a habilidade 'Imitar', que permite imitar qualquer som que tenha ouvido, incluindo vozes, e uma criatura pode perceber que é uma imitação com um teste de Sabedoria (Intuição) CD 14.",
+  "expected_contexts" : [ "dnd-5e-mm page 197" ]
+}, {
+  "id" : "gq-027",
+  "question" : "Quais são os danos causados pelo Sopro Flamejante do meio-dragão vermelho veterano?",
+  "expected_answer" : "O Sopro Flamejante causa 24 (7d6) de dano de fogo em caso de falha no teste de resistência, ou metade desse dano em caso de sucesso.",
+  "expected_contexts" : [ "dnd-5e-mm page 222" ]
+}, {
+  "id" : "gq-028",
+  "question" : "Quais são os efeitos dos raios oculares que o espectador pode usar?",
+  "expected_answer" : "Os raios oculares incluem: 1. Raio de Confusão, que impede o alvo de realizar reações e o força a atacar corpo-a-corpo ou usar Reflexão de Magia; 2. Raio Apavorante, que amedronta o alvo; 3. Raio de Ferimento, que causa dano necrótico.",
+  "expected_contexts" : [ "dnd-5e-mm page 247" ]
+}, {
+  "id" : "gq-029",
+  "question" : "Quais são as características físicas dos sátiros?",
+  "expected_answer" : "Os sátiros lembram humanos atarracados com a parte de baixo de seus corpos peludos e com cascos fendidos de bodes. Chifres brotam de suas cabeças, variando em tamanho desde pequenos tocos até grandes e espiralados chifres de carneiro, e eles geralmente ostentam barbas.",
+  "expected_contexts" : [ "dnd-5e-mm page 276" ]
+}, {
+  "id" : "gq-030",
+  "question" : "Quais são os habitats preferidos dos vermes da carniça?",
+  "expected_answer" : "Cavernas, esgotos, masmorras, florestas pantanosas, campos de batalha e cemitérios.",
+  "expected_contexts" : [ "dnd-5e-mm page 300" ]
+}, {
+  "id" : "gq-031",
+  "question" : "Quais são as características especiais de um enxame de aranhas?",
+  "expected_answer" : "Um enxame de aranhas possui os seguintes traços adicionais: Andar na Teia (ignora restrições de movimento causadas por estar numa teia), Escalada Aracnídea (pode escalar superfícies difíceis sem precisar realizar um teste de habilidade) e Sentido na Teia (sabe a localização exata de qualquer criatura em contato com a mesma teia).",
+  "expected_contexts" : [ "dnd-5e-mm page 327" ]
+}, {
+  "id" : "gq-032",
+  "question" : "Qual é o papel do Mestre em um jogo de D&D?",
+  "expected_answer" : "O Mestre é a força criativa por trás de um jogo de D&D, criando um mundo para os jogadores explorarem, mestrando aventuras, ajudando os jogadores a visualizar o que acontece ao redor deles, desempenhando papéis de monstros e personagens de suporte, e interpretando as regras.",
+  "expected_contexts" : [ "dnd-5e-dmg page 5" ]
+}, {
+  "id" : "gq-033",
+  "question" : "O que acontece se eu ofender seriamente a organização dos Zhentarim?",
+  "expected_answer" : "Ofensas sérias cometidas contra a organização ou seus membros podem resultar em perda de renome e de patente dentro dela.",
+  "expected_contexts" : [ "dnd-5e-dmg page 24" ]
+}, {
+  "id" : "gq-034",
+  "question" : "Quais são algumas das cosmologias alternativas que posso usar em minha campanha de D&D?",
+  "expected_answer" : "Você pode considerar o Omniverso, Planos Miríades, o Planetário, a Estrada Espiralada, o Olimpo Escalonado, a Barca Solar e Um Mundo.",
+  "expected_contexts" : [ "dnd-5e-dmg page 45" ]
+}, {
+  "id" : "gq-035",
+  "question" : "Quem é o arquiduque de Minauros e como ele é descrito?",
+  "expected_answer" : "O arquiduque de Minauros é Mamon, que lembra uma enorme serpente com a parte superior do dorso e cabeça de um humanoide chifrudo sem cabelo.",
+  "expected_contexts" : [ "dnd-5e-dmg page 65" ]
+}, {
+  "id" : "gq-036",
+  "question" : "Como eu decido quando um encontro aleatório acontece durante a aventura?",
+  "expected_answer" : "Você decide quando um encontro aleatório acontece ou rola. Considere fazer uma verificação uma vez a cada hora, entre 4 e 8 horas, ou uma vez por dia e uma vez durante um descanso longo, dependendo da atividade da área.",
+  "expected_contexts" : [ "dnd-5e-dmg page 87" ]
+}, {
+  "id" : "gq-037",
+  "question" : "O que acontece se o teste de Sabedoria (Sobrevivência) falhar durante a viagem do grupo?",
+  "expected_answer" : "O grupo viaja inadvertidamente na direção errada e se perde.",
+  "expected_contexts" : [ "dnd-5e-dmg page 112" ]
+}, {
+  "id" : "gq-038",
+  "question" : "Quais são os níveis de personagem necessários para adquirir itens mágicos de diferentes raridades?",
+  "expected_answer" : "Comum: 1° ou maior; Incomum: 5° ou maior; Raro: 9° ou maior; Muito raro: 13° ou maior; Lendário: 17° ou maior.",
+  "expected_contexts" : [ "dnd-5e-dmg page 136" ]
+}, {
+  "id" : "gq-039",
+  "question" : "O que acontece quando um personagem tira a carta das Chamas no baralho das surpresas?",
+  "expected_answer" : "A inimizade é evidente e o personagem deve experimentar os esforços malévolos do diabo em diversas ocasiões.",
+  "expected_contexts" : [ "dnd-5e-dmg page 159" ]
+}, {
+  "id" : "gq-040",
+  "question" : "Quantas vezes posso usar a estatueta do grifo de bronze antes de precisar esperar?",
+  "expected_answer" : "Você pode usar a estatueta do grifo de bronze uma vez a cada 5 dias.",
+  "expected_contexts" : [ "dnd-5e-dmg page 184" ]
+}, {
+  "id" : "gq-041",
+  "question" : "O que acontece se eu usar a Trombeta da Destruição e ela explodir?",
+  "expected_answer" : "Se a trombeta explodir, ela causa 10d6 de dano de fogo ao seu usuário e é destruída.",
+  "expected_contexts" : [ "dnd-5e-dmg page 210" ]
+}, {
+  "id" : "gq-042",
+  "question" : "O que acontece se eu usar a Bênção do Valhalla?",
+  "expected_answer" : "Você ganha o poder de invocar guerreiros espirituais, como se tivesse soprado uma trombeta do Valhalla prata, e não poderá usá-la novamente até que 7 dias se passem.",
+  "expected_contexts" : [ "dnd-5e-dmg page 230" ]
+}, {
+  "id" : "gq-043",
+  "question" : "Qual é a gravidade do dano de 10d10 para um personagem de nível 5?",
+  "expected_answer" : "Mortal.",
+  "expected_contexts" : [ "dnd-5e-dmg page 251" ]
+}, {
+  "id" : "gq-044",
+  "question" : "Como funciona a troca de papéis entre jogadores e Mestre nesse sistema?",
+  "expected_answer" : "Os jogadores podem gastar um ponto de trama para se tornar o Mestre a qualquer momento, e o personagem desse jogador se torna um PdM. O jogo continua a partir de onde o Mestre anterior parou, embora não seja recomendável trocar de papéis durante um combate.",
+  "expected_contexts" : [ "dnd-5e-dmg page 271" ]
+}, {
+  "id" : "gq-045",
+  "question" : "Como funciona o sistema de pontos de magia para conjuração?",
+  "expected_answer" : "No sistema de pontos de magia, um personagem que possui a característica Conjuração usa pontos de magia em vez de espaços de magia. Cada magia tem um custo de pontos baseado no seu nível, e você gasta pontos para criar um espaço de magia de um dado nível. Você recupera todos os pontos de magia gastos após um descanso longo.",
+  "expected_contexts" : [ "dnd-5e-dmg page 290" ]
+} ]

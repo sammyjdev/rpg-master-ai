@@ -40,7 +40,60 @@ services:
       OLLAMA_BASE_URL: http://host.docker.internal:11434
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: rpg-prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./infra/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    extra_hosts:
+      # Makes host.docker.internal resolvable on Linux; no-op on Docker Desktop.
+      - 'host.docker.internal:host-gateway'
+    restart: unless-stopped
+
+  tei-reranker:
+    # Pinned for Apple Silicon dev only: cpu-1.5/1.7 segfault (SIGSEGV) loading the Candle
+    # CPU backend under Colima's Rosetta amd64 emulation; cpu-1.2 does not (verified via
+    # manual /rerank call). Native amd64 hosts (CI, cloud) are untested and may not need
+    # this pin — retest cpu-latest there before assuming it's required everywhere.
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.2
+    # HF TEI publishes amd64-only images; force emulation via Colima Rosetta on Apple Silicon.
+    platform: linux/amd64
+    command: ['--model-id', 'BAAI/bge-reranker-v2-m3']
+    ports:
+      - '8090:80'
+    volumes:
+      - tei_data:/data
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: rpg-grafana
+    ports:
+      - '3001:3000'
+    volumes:
+      - ./infra/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_USERS_DEFAULT_THEME: dark
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
 volumes:
   qdrant_data:
   postgres_data:
   open_webui_data:
+  prometheus_data:
+  grafana_data:
+  tei_data:

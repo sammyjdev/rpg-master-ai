@@ -19,13 +19,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rpgmaster.app.application.QueryUseCase;
 import com.rpgmaster.app.application.port.DocumentRepository;
+import com.rpgmaster.app.config.RetrievalProperties;
 import com.rpgmaster.domain.QueryRequest;
+import com.rpgmaster.domain.SourceChunk;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import reactor.core.publisher.Flux;
 
 @Tag(name = "Chat", description = "OpenAI-compatible chat completions and model listing")
@@ -35,19 +40,20 @@ public class OpenAiCompatibleController {
 
     private static final String ALL_RULEBOOKS_MODEL = "all-rulebooks";
     private static final String CHAT_COMPLETION_CHUNK = "chat.completion.chunk";
-    private static final int DEFAULT_TOP_K = 8;
-    private static final float DEFAULT_THRESHOLD = 0.3f;
 
     private final QueryUseCase queryUseCase;
     private final DocumentRepository documentRepository;
     private final ObjectMapper objectMapper;
+    private final RetrievalProperties retrieval;
 
     public OpenAiCompatibleController(QueryUseCase queryUseCase,
                                       DocumentRepository documentRepository,
-                                      ObjectMapper objectMapper) {
+                                      ObjectMapper objectMapper,
+                                      RetrievalProperties retrieval) {
         this.queryUseCase = queryUseCase;
         this.documentRepository = documentRepository;
         this.objectMapper = objectMapper;
+        this.retrieval = retrieval;
     }
 
     @Operation(summary = "List available models",
@@ -71,8 +77,7 @@ public class OpenAiCompatibleController {
                  content = @Content(schema = @Schema(implementation = OpenAiChatCompletionResponse.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request (missing model or messages)")
     @PostMapping(value = "/chat/completions", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> chatCompletions(@RequestBody OpenAiChatCompletionRequest request) {
-        validateRequest(request);
+    public ResponseEntity<?> chatCompletions(@Valid @RequestBody OpenAiChatCompletionRequest request) {
         if (Boolean.TRUE.equals(request.stream())) {
             return ResponseEntity.ok()
                     .contentType(MediaType.TEXT_EVENT_STREAM)
@@ -89,7 +94,9 @@ public class OpenAiCompatibleController {
                         0,
                         new OpenAiAssistantMessage("assistant", queryResult.answer()),
                         "stop"
-                ))
+                )),
+                queryResult.sources().stream().map(SourceChunk::text).toList(),
+                new OpenAiUsage(0, 0, queryResult.tokensUsed())
         );
         return ResponseEntity.ok(response);
     }
@@ -138,19 +145,7 @@ public class OpenAiCompatibleController {
                 .orElseThrow(() -> new IllegalArgumentException("A user message is required."));
 
         var rulebookId = ALL_RULEBOOKS_MODEL.equals(request.model()) ? null : request.model();
-        return new QueryRequest(userMessage.content(), rulebookId, DEFAULT_TOP_K, DEFAULT_THRESHOLD);
-    }
-
-    private void validateRequest(OpenAiChatCompletionRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("Request body is required.");
-        }
-        if (request.model() == null || request.model().isBlank()) {
-            throw new IllegalArgumentException("Model is required.");
-        }
-        if (request.messages() == null || request.messages().isEmpty()) {
-            throw new IllegalArgumentException("At least one message is required.");
-        }
+        return new QueryRequest(userMessage.content(), rulebookId, retrieval.topK(), retrieval.similarityThreshold());
     }
 
     private String completionId() {
@@ -173,8 +168,11 @@ public class OpenAiCompatibleController {
 
     @Schema(description = "OpenAI-compatible chat completion request")
     public record OpenAiChatCompletionRequest(
+            @NotBlank(message = "model is required")
             @Schema(description = "Rulebook ID to search, or 'all-rulebooks'", example = "dnd-5e-phb")
             String model,
+            @NotEmpty(message = "messages must contain at least one entry")
+            @Valid
             @Schema(description = "Conversation messages — last 'user' message is the question")
             List<OpenAiMessage> messages,
             @Schema(description = "If true, response is streamed as SSE events", example = "false")
@@ -183,8 +181,10 @@ public class OpenAiCompatibleController {
 
     @Schema(description = "A chat message with role and content")
     public record OpenAiMessage(
+            @NotBlank(message = "role is required")
             @Schema(description = "Message role", example = "user", allowableValues = {"system", "user", "assistant"})
             String role,
+            @NotBlank(message = "content is required")
             @Schema(description = "Message text", example = "What is the Fireball spell?")
             String content) {
     }
@@ -202,12 +202,19 @@ public class OpenAiCompatibleController {
                                                String object,
                                                long created,
                                                String model,
-                                               List<OpenAiChatChoice> choices) {
+                                               List<OpenAiChatChoice> choices,
+                                               List<String> contexts,
+                                               OpenAiUsage usage) {
     }
 
     public record OpenAiChatChoice(int index,
                                    OpenAiAssistantMessage message,
                                    @JsonProperty("finish_reason") String finishReason) {
+    }
+
+    public record OpenAiUsage(@JsonProperty("prompt_tokens") int promptTokens,
+                              @JsonProperty("completion_tokens") int completionTokens,
+                              @JsonProperty("total_tokens") int totalTokens) {
     }
 
     public record OpenAiAssistantMessage(String role, String content) {

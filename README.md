@@ -14,7 +14,16 @@
 
 Phase 1 complete and signed off. The RAG loop works end-to-end via Spring Shell CLI. A PDF rulebook can be ingested and queried with natural language questions answered by a local LLM.
 
-**Next up — Phase 2: Evaluation & Observability.** Prove the RAG works with numbers, not vibes — golden Q&A harness, prompt versioning, Prometheus + Grafana.
+**Phase 2 — Evaluation & Observability — observability shipped on `master`.**
+The observability half (and the LangChain4j retrieval alternative, ADR-014) is merged to `master`:
+
+- Prompt versioning (`# version: vX.Y` header in every `.st` template) propagated to every query
+- Per-query JSON audit log on the dedicated `rpg.query.audit` logger
+- Micrometer meters for latency, token usage, cost (USD), ingestion throughput, embedding latency
+- Prometheus + Grafana via `docker-compose`; an 8-panel dashboard provisioned as code under `infra/observability/`
+- See [docs/observability.md](docs/observability.md) and [ADR-012](docs/adr/ADR-012-observability-contract.md)
+
+Eval harness (golden Q&A dataset, retrieval + answer metrics, baseline report) is the next deliverable.
 
 **Observed metrics (D&D 5e PHB):**
 
@@ -94,6 +103,8 @@ The long-term target remains a multi-service architecture split into gateway, in
 | PostgreSQL     | 5432      | Document metadata and lifecycle state                 | PostgreSQL + Flyway |
 | Ollama         | 11434     | Local embeddings and chat generation                  | Ollama              |
 | Open WebUI     | 3000      | Optional local UI for interacting with Ollama         | Open WebUI          |
+| Prometheus     | 9090      | Scrapes `/actuator/prometheus` from the app           | Prometheus          |
+| Grafana        | 3001      | RAG dashboard (RPG Master AI / RAG Operations)        | Grafana             |
 
 ### Data Storage
 
@@ -113,6 +124,7 @@ The long-term target remains a multi-service architecture split into gateway, in
 | Language        | **Java 21 (LTS)**         | Virtual Threads for I/O-bound AI calls. Records for domain models. Pattern Matching for clean conditionals. |
 | Framework       | **Spring Boot 3.3+**      | Native Spring AI integration. Auto-configured VT executor. Job market alignment.                            |
 | AI Framework    | **Spring AI**             | Java-native model integration with adapters around chat and embeddings.                                     |
+| Retrieval (alt) | **LangChain4j**           | Second retrieval path behind `RetrievalPort` (Spring AI is `@Primary`); compared by an integration test asserting >80% overlap. See [ADR-014](docs/adr/ADR-014-langchain4j-retrieval-alternative.md). |
 | LLM (local)     | **Ollama (`qwen2.5:7b`)** | Zero-cost dev loop. Swappable via Spring AI abstraction. No API key needed locally.                         |
 | Embedding Model | **Ollama (`bge-m3`)**     | Better multilingual retrieval for English and Portuguese questions.                                         |
 | LLM (cloud-free) | **NVIDIA NIM**           | Free-tier catalog (Llama 3.3, Nemotron, Mixtral, …). OpenAI-compatible. Enables multi-model eval comparison. Phase 3. |
@@ -178,7 +190,7 @@ rpg-master-ai/
 | Qdrant local via Docker Compose | Qdrant Java client      | ✅ |
 | CLI + OpenAI-compatible REST    | Spring Shell + WebFlux  | ✅ |
 | Swagger / OpenAPI 3.1           | springdoc-openapi       | ✅ |
-| 11 ADRs + gap-analysis          | docs/adr/               | ✅ |
+| 14 ADRs + gap-analysis          | docs/adr/               | ✅ |
 
 ---
 
@@ -318,10 +330,11 @@ docker-compose up -d
 ./rpgm start
 
 # Ingest a rulebook PDF
-./rpgm ingest pdfs/phb.pdf dnd-5e-phb
+# PDFs must live under the ingest allowlist root (~/rpg-corpus by default; see ADR-013).
+./rpgm ingest ~/rpg-corpus/phb.pdf dnd-5e-phb
 
 # Query
-./rpgm query "What is the Fireball spell and what damage does it deal?" dnd-5e-phb
+./rpgm ask "What is the Fireball spell and what damage does it deal?"
 ```
 
 ### Docker Compose Services
@@ -331,7 +344,14 @@ docker-compose up -d
 # - Qdrant        → localhost:6333 (dashboard: localhost:6333/dashboard)
 # - PostgreSQL    → localhost:5432
 # - Open WebUI    → localhost:3000 (connected to local Ollama at localhost:11434)
+# - Prometheus    → localhost:9090 (scrapes the app on host:8082)
+# - Grafana       → localhost:3001 (anonymous Viewer; admin/admin to edit)
 ```
+
+The Grafana instance auto-provisions the Prometheus datasource and any JSON
+dashboards committed under `infra/observability/grafana/dashboards/`. After
+`docker-compose up -d`, open <http://localhost:3001> and navigate to the
+"RPG Master AI" folder.
 
 ### Running Tests
 
@@ -374,13 +394,18 @@ Key decisions with explicit trade-offs documented in [docs/adr/](docs/adr/):
 
 - [ADR-001](docs/adr/ADR-001-qdrant-as-vector-store.md): Qdrant as vector store
 - [ADR-002](docs/adr/ADR-002-ollama-for-local-models.md): Ollama for local models (zero API cost dev loop)
+- [ADR-003](docs/adr/ADR-003-postgresql-for-metadata.md): PostgreSQL for document metadata
 - [ADR-004](docs/adr/ADR-004-hexagonal-architecture.md): Hexagonal architecture (ports and adapters)
 - [ADR-005](docs/adr/ADR-005-monolith-first-step1.md): Monolith-first for Phase 1
+- [ADR-006](docs/adr/ADR-006-sealed-ingestion-result.md): Sealed `IngestionResult` for exhaustive handling
 - [ADR-007](docs/adr/ADR-007-chunking-strategy-400-80.md): Chunking strategy — 400 tokens / 80 overlap
 - [ADR-008](docs/adr/ADR-008-bge-m3-embeddings.md): bge-m3 embeddings — multilingual, 1024 dimensions
 - [ADR-009](docs/adr/ADR-009-similarity-threshold-0.3.md): Similarity threshold 0.3
 - [ADR-010](docs/adr/ADR-010-virtual-threads-for-io.md): Virtual Threads for I/O bound AI calls
 - [ADR-011](docs/adr/ADR-011-no-lombok.md): No Lombok — Records only
+- [ADR-012](docs/adr/ADR-012-observability-contract.md): Observability contract — metric names, audit log shape, prompt versioning
+- [ADR-013](docs/adr/ADR-013-dev-only-ingest-endpoint.md): Dev-only ingest endpoint with a path allowlist
+- [ADR-014](docs/adr/ADR-014-langchain4j-retrieval-alternative.md): LangChain4j as a parallel retrieval alternative
 
 ---
 

@@ -1,6 +1,7 @@
 package com.rpgmaster.app.adapter.inbound;
 
 import com.rpgmaster.app.application.QueryUseCase;
+import com.rpgmaster.app.config.RetrievalProperties;
 import com.rpgmaster.domain.QueryRequest;
 import com.rpgmaster.domain.SourceChunk;
 import org.springframework.shell.standard.ShellComponent;
@@ -18,10 +19,15 @@ import org.springframework.shell.standard.ShellOption;
 @ShellComponent
 public class AskCommand {
 
-    private final QueryUseCase queryUseCase;
+    /** Sentinel used in {@link ShellOption#defaultValue()} to mean "fall back to {@link RetrievalProperties}". */
+    private static final String USE_CONFIGURED_DEFAULT = "-1";
 
-    public AskCommand(QueryUseCase queryUseCase) {
+    private final QueryUseCase queryUseCase;
+    private final RetrievalProperties retrieval;
+
+    public AskCommand(QueryUseCase queryUseCase, RetrievalProperties retrieval) {
         this.queryUseCase = queryUseCase;
+        this.retrieval = retrieval;
     }
 
     @ShellMethod(value = "Ask a question about a rulebook", key = "ask")
@@ -29,10 +35,14 @@ public class AskCommand {
             @ShellOption(help = "Your natural language question") String question,
             @ShellOption(defaultValue = ShellOption.NULL,
                     help = "Rulebook ID to search (omit to search all rulebooks)") String rulebook,
-            @ShellOption(defaultValue = "5", help = "Number of context chunks to retrieve") int topK,
-            @ShellOption(defaultValue = "0.3", help = "Minimum similarity threshold (0.0-1.0)") float threshold
+            @ShellOption(defaultValue = USE_CONFIGURED_DEFAULT,
+                    help = "Number of context chunks to retrieve (default: rpg.retrieval.top-k)") int topK,
+            @ShellOption(defaultValue = USE_CONFIGURED_DEFAULT,
+                    help = "Minimum similarity threshold 0.0-1.0 (default: rpg.retrieval.similarity-threshold)") float threshold
     ) {
-        var request = new QueryRequest(question, rulebook, topK, threshold);
+        var effectiveTopK = topK < 0 ? retrieval.topK() : topK;
+        var effectiveThreshold = threshold < 0 ? retrieval.similarityThreshold() : threshold;
+        var request = new QueryRequest(question, rulebook, effectiveTopK, effectiveThreshold);
         var result = queryUseCase.query(request);
 
         var sb = new StringBuilder();
