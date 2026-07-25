@@ -57,3 +57,8 @@ AGENT-*.md
 # LinkedIn drafts (local only)
 docs/linkedin-article-phase1.md
 docs/Version B*
+
+# Personal marketing prompt + ephemeral session handoffs (keep local)
+.github/prompts/linkedin-article.prompt.md
+docs/PHASE-2-HANDOFF.md
+docs/superpowers/HANDOFF-*.md
