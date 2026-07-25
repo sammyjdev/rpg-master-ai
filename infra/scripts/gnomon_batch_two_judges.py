@@ -34,7 +34,7 @@ from gnomon.targets.openai_compat import OpenAICompatTarget  # noqa: E402
 DATASET = "eval/gnomon/dataset.json"
 TARGET_URL = os.environ.get("TARGET_URL", "http://localhost:8082/v1")
 TARGET_MODEL = "all-rulebooks"
-JUDGE_URL = os.environ.get("JUDGE_URL", "http://<judge-host>:11434")
+JUDGE_URL = os.environ.get("JUDGE_URL", "http://localhost:11434")
 JUDGES = ["llama3.1:8b", "gemma4:e4b"]
 # JUDGE_RUNS and SEED intentionally mirror eval/gnomon/config.toml [eval]
 # (judge_runs, seed). Keep them in sync so results stay comparable to a direct

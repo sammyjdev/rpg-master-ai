@@ -31,7 +31,7 @@ timeout_s = 120.0
 [judge]
 provider = "ollama"
 model = "llama3.1:8b"
-base_url = "http://<judge-host>:11434"
+base_url = "http://localhost:11434"
 
 [gate]
 # Record-only on this first wiring — no build should fail on these yet.
